@@ -98,7 +98,9 @@ def get_newest_message_id():
     for f in message_files:
         message_id = f.split("-")[0]
         message_ids.append(int(message_id))
-    return min(message_ids)
+    if len(message_ids) > 0:
+        return min(message_ids)
+    return 0
 
 
 async def main():
