@@ -1,0 +1,7 @@
+.env
+.venv
+anon.session
+mtproto-server
+session_name.session
+.ipynb_checkpoints/
+*.json
