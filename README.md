@@ -36,46 +36,14 @@ o `CHANNEL_ID` será `12223346006`.
 
 ## Rodando o programa
 
-Por enquanto o programa é composto de um arquivo `main.py` e um jupyter notebook `YoutubeURLsPOC.ipynb`.
+Primeiro, rode o script `TelegramApi.py` diretamente, dentro da pasta app.
 
-### O script `main.py`
+    python3 app/TelegramApi.py
 
-Esse script vai ir salvando mensagens do grupo do telegram configurado, e salvando elas de 100 em 100 em arquivos .json.
+Siga as instruções para cadastrar uma nova sessão para uso do Telegram.
 
-Cada vez que você rodar o programa, ele vai salvar 200 mensagens, usando o último arquivo .json pra saber de onde começar.
+Depois, rode o projeto com
 
-Você pode rodá-lo com:
+    cd app && uvicorn main:app --reload
 
-    python3 main.py
-
-Ele vai criar um estrutura de arquivos no formato:
-
-    65135-messages.json	66148-messages.json
-    65335-messages.json	66351-messages.json
-    65536-messages.json	66553-messages.json
-    65740-messages.json	66759-messages.json
-    65943-messages.json	
-
-Esse script é um ponto de partida para a criação de um scrapper mais robusto.
-
-### O caderno `YoutubeURLsPOC.ipynb`
-
-Inicie o jupyter notebook com
-
-    jupyter-notebook
-
-Abra o caderno `YoutubeURLsPOC.ipynb`. Você pode ir rodando célula a célula.
-
-Ele contém alguns exemplos de como podemos usar os resultados da API do telegram para:
-
-- Filtrar mensagens que contém URLs do youtube
-- Verificar quais URLs possuem vídeos de música usando o site everynoise
-- Verificar quais URLs possuem vídeos de música usando a API do spotify (não implementado)
-
-
-## Referências
-
-- <https://betterprogramming.pub/how-to-get-data-from-telegram-82af55268a4b>
-- <https://github.com/amiryousefi/telegram-analysis>
-- <https://docs.telethon.dev/en/stable/quick-references/client-reference.html#chats>
-- <https://github.com/LonamiWebs/Telethon>
+Você pode verificar a documentação em `http://localhost:8000/docs`.

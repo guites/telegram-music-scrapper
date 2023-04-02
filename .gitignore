@@ -1,8 +1,7 @@
 **/.env
 .venv
-**/anon.session
+**/*.session
 **/mtproto-server
-**/session_name.session
 .ipynb_checkpoints/
 *.json
 **/*.db

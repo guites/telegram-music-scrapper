@@ -1,30 +1,22 @@
-import os
-import json
-
 from decouple import config
 from glob import glob
+from sys import exit
 from telethon import TelegramClient
 from telethon.tl.functions.messages import GetHistoryRequest
 from telethon.tl.types import PeerChannel
 
+import models
+
+from crud import TelegramCrud
+from database import DatabaseWrapper, engine
+
 
 class TelegramApi:
-    def __init__(self):
+    def __init__(self, session_name):
         self.api_id = config("API_ID")
         self.api_hash = config("API_HASH")
-        self.client = TelegramClient("anon", self.api_id, self.api_hash)
+        self.client = TelegramClient(session_name, self.api_id, self.api_hash)
         self.channel_id = int(config("CHANNEL_ID"))
-
-    def _get_oldest_message_id(self):
-        # TODO: this should be a database query
-        message_files = glob("*-messages.json")
-        message_ids = []
-        for f in message_files:
-            message_id = f.split("-")[0]
-            message_ids.append(int(message_id))
-        if len(message_ids) > 0:
-            return min(message_ids)
-        return 0
     
     async def get_channel_messages(self, channel, limit=10, total_count_limit=20):
         offset_id = self.starting_offset_id
@@ -58,19 +50,16 @@ class TelegramApi:
         return all_messages, offset_id
     
     async def _run_get_messages_routine(self):
-        await self.client.connect()
+        if not self.client.is_connected():
+            print("Connecting to Telegram Servers...")
+            await self.client.connect()
+        print("Connected to Telegram Servers!")
         input_channel = PeerChannel(self.channel_id)
         channel = await self.client.get_entity(input_channel)
         messages, offset_id = await self.get_channel_messages(channel)
         self.starting_offset_id = offset_id
-
-        save_file = os.path.join(f"{self.starting_offset_id}-messages.json")
-        with open(save_file, "w") as outfile:
-            json.dump(messages, outfile, default=str)
-
-        print(f"saved messages at {save_file}")
-
-        return messages
+        print("Done getting messages. Last Offset ID:", offset_id)
+        return messages, offset_id
     
     def create_loop(self):
         with self.client:
@@ -79,6 +68,27 @@ class TelegramApi:
     def set_message_offset(self, offset):
         self.starting_offset_id = offset
 
+
 if __name__ == "__main__":
-    telegram_api = TelegramApi()
+    # create database tables if this is the first time running the script
+    models.Base.metadata.create_all(bind=engine)
+    # receive session name and trim input
+    telethon_session_name = input("Enter a name for your Telethon session: ").strip()
+    if telethon_session_name == "":
+        print("Please enter a valid name for your Telethon session.")
+        exit(1)
+    # check if session name already exists
+    with DatabaseWrapper() as db:
+        telegram_crud = TelegramCrud(db)
+    if telegram_crud.get_telegram_session_by_name(telethon_session_name) is not None:
+        print("A session with that name already exists.")
+        exit(1)
+    telegram_api = TelegramApi(telethon_session_name)
+    telegram_api.set_message_offset(0)
     telegram_api.create_loop()
+    telegram_api.client.disconnect()
+    # if we reached this point, we have successfully connected to Telegram
+    # save session as valid in database
+    with DatabaseWrapper() as db:
+        telegram_crud = TelegramCrud(db)
+    telegram_crud.save_telegram_session(telethon_session_name)
