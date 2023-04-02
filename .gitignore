@@ -1,7 +1,9 @@
-.env
+**/.env
 .venv
-anon.session
-mtproto-server
-session_name.session
+**/anon.session
+**/mtproto-server
+**/session_name.session
 .ipynb_checkpoints/
 *.json
+**/*.db
+**/__pycache__
