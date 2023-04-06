@@ -7,7 +7,7 @@ from telethon.tl.types import PeerChannel
 
 import models
 
-from crud import TelegramCrud
+from crud import TelegramCrud, TelegramSessionCrud
 from database import DatabaseWrapper, engine
 
 
@@ -17,14 +17,16 @@ class TelegramApi:
         self.api_hash = config("API_HASH")
         self.client = TelegramClient(session_name, self.api_id, self.api_hash)
         self.channel_id = int(config("CHANNEL_ID"))
-    
+
     async def get_channel_messages(self, channel, limit=10, total_count_limit=20):
         offset_id = self.starting_offset_id
         all_messages = []
         total_messages = 0
 
         while True:
-            print("Current Offset ID is:", offset_id, "; Total Messages:", total_messages)
+            print(
+                "Current Offset ID is:", offset_id, "; Total Messages:", total_messages
+            )
             history = await self.client(
                 GetHistoryRequest(
                     peer=channel,
@@ -48,7 +50,7 @@ class TelegramApi:
                 break
 
         return all_messages, offset_id
-    
+
     async def _run_get_messages_routine(self):
         if not self.client.is_connected():
             print("Connecting to Telegram Servers...")
@@ -60,11 +62,11 @@ class TelegramApi:
         self.starting_offset_id = offset_id
         print("Done getting messages. Last Offset ID:", offset_id)
         return messages, offset_id
-    
+
     def create_loop(self):
         with self.client:
             return self.client.loop.run_until_complete(self._run_get_messages_routine())
-    
+
     def set_message_offset(self, offset):
         self.starting_offset_id = offset
 
@@ -77,10 +79,16 @@ if __name__ == "__main__":
     if telethon_session_name == "":
         print("Please enter a valid name for your Telethon session.")
         exit(1)
+
     # check if session name already exists
     with DatabaseWrapper() as db:
         telegram_crud = TelegramCrud(db)
-    if telegram_crud.get_telegram_session_by_name(telethon_session_name) is not None:
+        telegram_session_crud = TelegramSessionCrud(db)
+
+    if (
+        telegram_session_crud.get_telegram_session_by_name(telethon_session_name)
+        is not None
+    ):
         print("A session with that name already exists.")
         exit(1)
     telegram_api = TelegramApi(telethon_session_name)
@@ -90,5 +98,5 @@ if __name__ == "__main__":
     # if we reached this point, we have successfully connected to Telegram
     # save session as valid in database
     with DatabaseWrapper() as db:
-        telegram_crud = TelegramCrud(db)
-    telegram_crud.save_telegram_session(telethon_session_name)
+        telegram_session_crud = TelegramSessionCrud(db)
+    telegram_session_crud.save_telegram_session(telethon_session_name)
