@@ -1,0 +1,28 @@
+.webpage_description {
+    white-space: pre-line;
+}
+
+.webpage_description div {
+    height:100px;
+    overflow-y: hidden;
+}
+
+.webpage_description.expanded div {
+    height: auto;
+    overflow: visible;
+}
+
+.float-anchor {
+    position: relative;
+}
+
+.floating-group {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    visibility: hidden;
+}
+
+.floating-group.visible {
+    visibility: visible;
+}
