@@ -9,6 +9,7 @@ import Tooltip from 'react-bootstrap/Tooltip';
 import Popover from 'react-bootstrap/Popover';
 import Spinner from 'react-bootstrap/Spinner';
 import Form from 'react-bootstrap/Form';
+import Modal from 'react-bootstrap/Modal';
 import './App.css';
 
 export const App = () => {
@@ -20,16 +21,19 @@ export const App = () => {
     loading: true,
   });
   const [cachedArtists, setCachedArtists] = useState([]);
-
   const [popOver, setPopOver] = useState({});
-
   const [text, setText] = useState([{
     id: null,
-    originalText: null,
+    originalDescription: null,
+    originalTitle: null,
     beforeText: null,
     selectedText: null,
     afterText: null,
   }]);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const handleShowDeleteModal = () => setShowDeleteModal(findById(selectedRow));
+  const handleCloseDeleteModal = () => setShowDeleteModal(false);
 
   // fetch table data from backend
   useEffect(() => {
@@ -45,6 +49,7 @@ export const App = () => {
           beforeText: null,
           selectedText: null,
           afterText: null,
+          webpage_url: row.webpage_url,
         })
       });
       setText(initial_text);
@@ -185,6 +190,28 @@ export const App = () => {
     });
   }
 
+  const flagNotMusicModal = (
+      <Modal show={ showDeleteModal != null } onHide={ handleCloseDeleteModal }>
+        <Modal.Header closeButton>
+          <Modal.Title>Este vídeo não é de música?</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            <a href={showDeleteModal.webpage_url} target="_blank">{showDeleteModal?.originalTitle}</a>
+          </p>
+          <p style={{maxHeight: "300px", overflowY: "scroll", whiteSpace: "pre-line"}}>{showDeleteModal?.originalDescription}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={ handleCloseDeleteModal }>
+            Fechar
+          </Button>
+          <Button variant="primary" onClick={ flagNotMusic }>
+            Confirmar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+  )
+
   return (
     <Container>
     <Row>
@@ -203,7 +230,7 @@ export const App = () => {
         </thead>
         <tbody>
           {data.map((row, index) => (
-            <tr id={`row-${row.id}`} className="float-anchor" key={row.id} onMouseUp={ handleMouseUp } onMouseEnter={() => { setSelectedRow(row.id) }} onMouseLeave={() => { setSelectedRow(null) }} >
+            <tr id={`row-${row.id}`} className="float-anchor" key={row.id} onMouseUp={ handleMouseUp } onMouseEnter={() => { setSelectedRow(row.id) }} /* onMouseLeave={() => { setSelectedRow(null) }} */ >
               <td>
                 {row.id}
                 <ButtonGroup className={`floating-group ${selectedRow === row.id ? "visible" : ""}`} aria-label="Basic example">
@@ -214,7 +241,7 @@ export const App = () => {
                         Vídeo <strong>não</strong> é de música.
                       </Tooltip>
                     }>
-                    <Button onClick={ flagNotMusic } size="sm" variant="danger">✕</Button>
+                    <Button onClick={ handleShowDeleteModal /* flagNotMusic */ } size="sm" variant="danger">✕</Button>
                   </OverlayTrigger>
                   <OverlayTrigger
                   placement='top'
@@ -226,6 +253,7 @@ export const App = () => {
                       <Button style={{cursor: "help"}} size="sm" variant="secondary">?</Button>
                     </OverlayTrigger>
                 </ButtonGroup>
+                { showDeleteModal && flagNotMusicModal }
               </td>
               <td>{row.message}</td>
               <td>{row.site_name}</td>
