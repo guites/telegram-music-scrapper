@@ -15,6 +15,7 @@ from database import SessionLocal, engine
 from RapidFuzz import RapidFuzz
 from schemas import TelegramMessageResponse
 from TelegramApi import TelegramApi
+from utils import check_artist_names_file
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -51,13 +52,10 @@ def get_db():
         db.close()
 
 
+ARTISTS_FILE_PATH = check_artist_names_file()
+
 # TODO: this information is available on the musicbrainz_artist table
-ARTISTS_LIST = dd.read_csv(
-    os.path.join(
-        "/Users/guilhermegarcia/Projects/matehackers-telegram/app/scripts/artist_importer/artist_names.txt"
-    ),
-    sep=";",
-)["artist"]
+ARTISTS_LIST = dd.read_csv(ARTISTS_FILE_PATH, sep=";")["artist"]
 ARTISTS_FUZZ = RapidFuzz(ARTISTS_LIST)
 
 
@@ -94,7 +92,7 @@ async def read_telegram_message_site_names(db: Session = Depends(get_db)):
     return telegram_message_site_names
 
 
-@app.get("/telegram_messages")
+@app.get("/telegram_messages", response_model=List[TelegramMessageResponse])
 async def read_telegram_messages(
     site_name: Union[str, None] = None,
     has_musicbrainz_artist: bool = False,
@@ -145,8 +143,12 @@ async def sync_telegram_messages(db: Session = Depends(get_db)):
     starting_offset_id = telegram_crud.get_earliest_telegram_message_id()
     print(f"Starting offset id: {starting_offset_id}")
 
-    telegram_api = TelegramApi(unused_session.session_name)
-
+    try:
+        telegram_api = TelegramApi(unused_session.session_name)
+    except ValueError as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Error while connecting to the telegram api.")
+    
     # get messages older than the starting offset
     telegram_api.set_message_offset(starting_offset_id)
 

@@ -1,0 +1,6 @@
+from decouple import config
+
+TELEGRAM_API_ID = config("TELEGRAM_API_ID", None)
+TELEGRAM_API_HASH = config("TELEGRAM_API_HASH", None)
+TELEGRAM_CHANNEL_ID = config("TELEGRAM_CHANNEL_ID", 0)
+ARTISTS_FILE_PATH = config("ARTISTS_FILE_PATH", None)

@@ -35,28 +35,41 @@ export const App = () => {
   const handleShowDeleteModal = () => setShowDeleteModal(findById(selectedRow));
   const handleCloseDeleteModal = () => setShowDeleteModal(false);
 
+
+  const read_telegram_messages = () => {
+    fetch('http://localhost:8000/telegram_messages?site_name=YouTube&has_musicbrainz_artist=false&is_music=true')
+      .then((response) => response.json())
+      .then((received) => {
+        const initial_text = [];
+        received.forEach((row, _) => {
+          initial_text.push({
+            id: row.id,
+            message: row.message,
+            site_name: row.site_name,
+            webpage_url: row.webpage_url,
+            webpage_description: row.webpage_description,
+            webpage_title: row.webpage_title,
+            beforeText: null,
+            selectedText: null,
+            afterText: null,
+          })
+        });
+        setText(initial_text);
+      });
+    }
+
   // fetch table data from backend
   useEffect(() => {
-  fetch('http://localhost:8000/telegram_messages?site_name=YouTube&has_musicbrainz_artist=false&is_music=true')
-    .then((response) => response.json())
-    .then((received) => {
-      const initial_text = [];
-      received.forEach((row, _) => {
-        initial_text.push({
-          id: row.id,
-          message: row.message,
-          site_name: row.site_name,
-          webpage_url: row.webpage_url,
-          webpage_description: row.webpage_description,
-          webpage_title: row.webpage_title,
-          beforeText: null,
-          selectedText: null,
-          afterText: null,
-        })
-      });
-      setText(initial_text);
-    });
+    read_telegram_messages();
   }, []);
+
+  const sync_telegram_messages = () => {
+    fetch('http://localhost:8000/telegram_messages/sync', {method: 'POST'})
+      .then((response) => response.json())
+      .then((j) => {
+        console.log(j);
+      });
+    }
 
   const confirmArtist = () => {
     const selectedArtist = document.querySelector('#popover-basic select').value;
@@ -273,6 +286,9 @@ export const App = () => {
         </tbody>
       </Table>
     </Row>
+    <ButtonGroup>
+      <Button onClick={ sync_telegram_messages }>Mais mensagens</Button>
+    </ButtonGroup>
     </Container>
   );
 }

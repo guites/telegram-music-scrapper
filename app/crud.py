@@ -1,3 +1,5 @@
+import sqlalchemy as sa
+
 from datetime import datetime
 from sqlalchemy import inspect
 from sqlalchemy.orm import load_only, Session
@@ -111,8 +113,9 @@ class TelegramCrud:
             query = query.filter(TelegramMessage.musicbrainz_artist_id != None)
         else:
             query = query.filter(TelegramMessage.musicbrainz_artist_id == None)
-
-        query = query.filter(TelegramMessage.is_music == is_music)
+        
+        if is_music is not None:
+            query = query.filter(sa.func.coalesce(TelegramMessage.is_music, is_music))
 
         return query.all()
 

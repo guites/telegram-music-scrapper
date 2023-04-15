@@ -9,14 +9,21 @@ import models
 
 from crud import TelegramCrud, TelegramSessionCrud
 from database import DatabaseWrapper, engine
-
+from definitions import TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_CHANNEL_ID
 
 class TelegramApi:
+    """A class to interact with the Telegram API.
+    
+    Raises:
+        ValueError: If the TELEGRAM_API_ID, TELEGRAM_API_HASH or TELEGRAM_CHANNEL_ID environment variables are not defined."""
     def __init__(self, session_name):
-        self.api_id = config("API_ID")
-        self.api_hash = config("API_HASH")
+        self.api_id = TELEGRAM_API_ID
+        self.api_hash = TELEGRAM_API_HASH
+        self.channel_id = int(TELEGRAM_CHANNEL_ID)
         self.client = TelegramClient(session_name, self.api_id, self.api_hash)
-        self.channel_id = int(config("CHANNEL_ID"))
+
+        if self.api_id is None or self.api_hash is None:
+            raise ValueError("Please define the Telegram API ID, API Hash and Channel ID environment variables.")
 
     async def get_channel_messages(self, channel, limit=10, total_count_limit=20):
         offset_id = self.starting_offset_id

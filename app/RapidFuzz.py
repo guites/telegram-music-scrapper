@@ -1,3 +1,4 @@
+from typing import List
 from unidecode import unidecode
 from rapidfuzz import process as rapidfuzz_process
 
@@ -18,7 +19,7 @@ class RapidFuzz:
             "query": query,
         }
 
-    def extract_list(self, query: list[str], limit: int = 5):
+    def extract_list(self, query: List[str], limit: int = 5):
         results = []
         for q in query:
             results.append(
