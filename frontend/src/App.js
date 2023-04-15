@@ -24,8 +24,8 @@ export const App = () => {
   const [popOver, setPopOver] = useState({});
   const [text, setText] = useState([{
     id: null,
-    originalDescription: null,
-    originalTitle: null,
+    webpage_description: null,
+    webpage_title: null,
     beforeText: null,
     selectedText: null,
     afterText: null,
@@ -44,16 +44,17 @@ export const App = () => {
       received.forEach((row, _) => {
         initial_text.push({
           id: row.id,
-          originalDescription: row.webpage_description,
-          originalTitle: row.webpage_title,
+          message: row.message,
+          site_name: row.site_name,
+          webpage_url: row.webpage_url,
+          webpage_description: row.webpage_description,
+          webpage_title: row.webpage_title,
           beforeText: null,
           selectedText: null,
           afterText: null,
-          webpage_url: row.webpage_url,
         })
       });
       setText(initial_text);
-      setData(received);
     });
   }, []);
 
@@ -140,15 +141,15 @@ export const App = () => {
       setArtist({ ...artist, loading: true });
 
       if (popOverInTitle) {
-        const index = currentText.originalTitle.indexOf(selectedStr);
+        const index = currentText.webpage_title.indexOf(selectedStr);
         currentText.selectedText = selectedStr;
-        currentText.beforeText = currentText.originalTitle.substring(0, index);
-        currentText.afterText = currentText.originalTitle.substring(index + selectedStr.length);
+        currentText.beforeText = currentText.webpage_title.substring(0, index);
+        currentText.afterText = currentText.webpage_title.substring(index + selectedStr.length);
       } else {
-        const index = currentText.originalDescription.indexOf(selectedStr);
+        const index = currentText.webpage_description.indexOf(selectedStr);
         currentText.selectedText = selectedStr;
-        currentText.beforeText = currentText.originalDescription.substring(0, index);
-        currentText.afterText = currentText.originalDescription.substring(index + selectedStr.length);
+        currentText.beforeText = currentText.webpage_description.substring(0, index);
+        currentText.afterText = currentText.webpage_description.substring(index + selectedStr.length);
       }
       
       // show popover
@@ -197,9 +198,9 @@ export const App = () => {
         </Modal.Header>
         <Modal.Body>
           <p>
-            <a href={showDeleteModal.webpage_url} target="_blank">{showDeleteModal?.originalTitle}</a>
+            <a href={showDeleteModal.webpage_url} target="_blank">{showDeleteModal?.webpage_title}</a>
           </p>
-          <p style={{maxHeight: "300px", overflowY: "scroll", whiteSpace: "pre-line"}}>{showDeleteModal?.originalDescription}</p>
+          <p style={{maxHeight: "300px", overflowY: "scroll", whiteSpace: "pre-line"}}>{showDeleteModal?.webpage_description}</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={ handleCloseDeleteModal }>
@@ -229,7 +230,7 @@ export const App = () => {
           </tr>
         </thead>
         <tbody>
-          {data.map((row, index) => (
+          {text.map((row, index) => (
             <tr id={`row-${row.id}`} className="float-anchor" key={row.id} onMouseUp={ handleMouseUp } onMouseEnter={() => { setSelectedRow(row.id) }} /* onMouseLeave={() => { setSelectedRow(null) }} */ >
               <td>
                 {row.id}
@@ -241,7 +242,7 @@ export const App = () => {
                         Vídeo <strong>não</strong> é de música.
                       </Tooltip>
                     }>
-                    <Button onClick={ handleShowDeleteModal /* flagNotMusic */ } size="sm" variant="danger">✕</Button>
+                    <Button onClick={ handleShowDeleteModal } size="sm" variant="danger">✕</Button>
                   </OverlayTrigger>
                   <OverlayTrigger
                   placement='top'
