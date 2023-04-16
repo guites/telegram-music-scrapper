@@ -80,7 +80,7 @@ async def bind_telegram_message_to_musicbrainz_artist(
     telegram_crud = TelegramCrud(db)
 
     telegram_message = telegram_crud.bind_telegram_message_to_musicbrainz_artist(
-        telegram_message_id, musicbrainz_artist_id
+        telegram_message_id, musicbrainz_artist_id - 1
     )
     return telegram_message
 

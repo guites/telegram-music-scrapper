@@ -8,6 +8,8 @@ O projeto é composto de uma API escrita em Python e um frontend em React.
 
 ## Iniciando a API
 
+Todos os passos abaixo devem ser realizados no diretório `app/`.
+
 Crie um ambiente virtual.
 
     python3 -m venv .venv
@@ -18,7 +20,7 @@ Ative o ambiente.
 
 Instale as dependências.
 
-    pip3 install -r app/requirements.txt
+    pip3 install -r requirements.txt
 
 ### Configurações da API
 
@@ -43,7 +45,7 @@ o `CHANNEL_ID` será `12223346006`.
 
 Primeiro, rode o script `TelegramApi.py` diretamente, dentro da pasta app.
 
-    python3 app/TelegramApi.py
+    python3 TelegramApi.py
 
 Siga as instruções para cadastrar uma nova sessão para uso do Telegram.
 
