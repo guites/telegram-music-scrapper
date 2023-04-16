@@ -103,6 +103,7 @@ export const App = () => {
       .then((response) => response.json())
       .then((j) => {
         setArtist({ ...artist, loading: false });
+        setText(text.filter((item) => item.id !== currentText.id));
         setPopOver({id: null});
       });
   }
