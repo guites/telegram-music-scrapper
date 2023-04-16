@@ -14,7 +14,6 @@ import Modal from 'react-bootstrap/Modal';
 import './App.css';
 
 export const App = () => {
-  const [data, setData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [artist, setArtist] = useState({
     query: null,
@@ -31,6 +30,7 @@ export const App = () => {
     selectedText: null,
     afterText: null,
   }]);
+  const [gettingMoreMessages, setGettingMoreMessages] = useState(false);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const handleShowDeleteModal = () => setShowDeleteModal(findById(selectedRow));
@@ -56,9 +56,16 @@ export const App = () => {
   }, []);
 
   const get_more_messages = async () => {
+    setGettingMoreMessages(true);
     await sync_telegram_messages();
+
     // get item from text with biggest id
-    const biggest_id_item = text.reduce((prev, current) => (prev.id > current.id) ? prev : current);
+    let biggest_id_item;
+    if (text.length === 0) {
+      biggest_id_item = {id: null};
+    } else {
+      biggest_id_item = text.reduce((prev, current) => (prev.id > current.id) ? prev : current);
+    }
     
     const telegram_messages = await read_telegram_messages(biggest_id_item.id);
     // make a copy of the text array
@@ -80,6 +87,7 @@ export const App = () => {
       }
     });
     setText(new_text);
+    setGettingMoreMessages(false);
   }
 
   // fetch table data from backend
@@ -157,7 +165,6 @@ export const App = () => {
       const selectedElement = windowSelection.focusNode.parentElement;
 
       const elClassName = selectedElement.parentElement.className;
-      console.log("elClassName", elClassName);
 
       // only allow selection inside webpage_description
       if (!['webpage_description', 'webpage_title'].includes(elClassName)) {
@@ -215,6 +222,8 @@ export const App = () => {
       .then((response) => response.json())
       .then((j) => {
         console.log(j);
+        // remove from text by id
+        setText(text.filter((item) => item.id !== selectedRow));
         setPopOver({id: null});
     });
   }
@@ -222,7 +231,7 @@ export const App = () => {
   const flagNotMusicModal = (
       <Modal show={ showDeleteModal != null } onHide={ handleCloseDeleteModal }>
         <Modal.Header closeButton>
-          <Modal.Title>Este vídeo não é de música?</Modal.Title>
+          <Modal.Title>{selectedRow} | Este vídeo não é de música?</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p>
@@ -302,7 +311,7 @@ export const App = () => {
       </Table>
     </Row>
     <ButtonGroup>
-      <Button onClick={ get_more_messages }>Mais mensagens</Button>
+      <Button disabled={gettingMoreMessages} onClick={ get_more_messages }>Mais mensagens</Button>
     </ButtonGroup>
     </Container>
   );
