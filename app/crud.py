@@ -91,6 +91,7 @@ class TelegramCrud:
         site_name: Union[str, None] = None,
         has_musicbrainz_artist: bool = False,
         is_music: bool = True,
+        offset_id: Union[int, None] = None,
         fields: Union[List[str], None] = None,
     ):
         query = self.db.query(TelegramMessage)
@@ -116,6 +117,9 @@ class TelegramCrud:
         
         if is_music is not None:
             query = query.filter(sa.func.coalesce(TelegramMessage.is_music, is_music))
+        
+        if offset_id is not None:
+            query = query.filter(TelegramMessage.id > offset_id)
 
         return query.all()
 

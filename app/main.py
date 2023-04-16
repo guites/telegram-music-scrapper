@@ -98,12 +98,13 @@ async def read_telegram_messages(
     has_musicbrainz_artist: bool = False,
     is_music: bool = True,
     fields: List[str] = Query(None),
+    offset_id: Union[int, None] = None,
     db: Session = Depends(get_db),
 ):
     telegram_crud = TelegramCrud(db)
     try:
         telegram_messages = telegram_crud.read_telegram_messages(
-            site_name, has_musicbrainz_artist, is_music, fields
+            site_name, has_musicbrainz_artist, is_music, offset_id, fields
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

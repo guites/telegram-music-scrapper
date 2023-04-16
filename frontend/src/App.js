@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { read_telegram_messages, sync_telegram_messages } from './requests';
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
@@ -35,41 +36,56 @@ export const App = () => {
   const handleShowDeleteModal = () => setShowDeleteModal(findById(selectedRow));
   const handleCloseDeleteModal = () => setShowDeleteModal(false);
 
+  const request_telegram_messages = useCallback(async () => {
+    const telegram_messages = await read_telegram_messages(null);
+    const initial_text = [];
+    telegram_messages.forEach((row, _) => {
+      initial_text.push({
+        id: row.id,
+        message: row.message,
+        site_name: row.site_name,
+        webpage_url: row.webpage_url,
+        webpage_description: row.webpage_description,
+        webpage_title: row.webpage_title,
+        beforeText: null,
+        selectedText: null,
+        afterText: null,
+      })
+    });
+    setText(initial_text);
+  }, []);
 
-  const read_telegram_messages = () => {
-    fetch('http://localhost:8000/telegram_messages?site_name=YouTube&has_musicbrainz_artist=false&is_music=true')
-      .then((response) => response.json())
-      .then((received) => {
-        const initial_text = [];
-        received.forEach((row, _) => {
-          initial_text.push({
-            id: row.id,
-            message: row.message,
-            site_name: row.site_name,
-            webpage_url: row.webpage_url,
-            webpage_description: row.webpage_description,
-            webpage_title: row.webpage_title,
-            beforeText: null,
-            selectedText: null,
-            afterText: null,
-          })
-        });
-        setText(initial_text);
-      });
-    }
+  const get_more_messages = async () => {
+    await sync_telegram_messages();
+    // get item from text with biggest id
+    const biggest_id_item = text.reduce((prev, current) => (prev.id > current.id) ? prev : current);
+    
+    const telegram_messages = await read_telegram_messages(biggest_id_item.id);
+    // make a copy of the text array
+    const new_text = [...text];
+    // add new messages to the copy
+    telegram_messages.forEach((row, _) => {
+      if (row.id > biggest_id_item.id) {
+        new_text.push({
+          id: row.id,
+          message: row.message,
+          site_name: row.site_name,
+          webpage_url: row.webpage_url,
+          webpage_description: row.webpage_description,
+          webpage_title: row.webpage_title,
+          beforeText: null,
+          selectedText: null,
+          afterText: null,
+        })
+      }
+    });
+    setText(new_text);
+  }
 
   // fetch table data from backend
   useEffect(() => {
-    read_telegram_messages();
+    request_telegram_messages();
   }, []);
-
-  const sync_telegram_messages = () => {
-    fetch('http://localhost:8000/telegram_messages/sync', {method: 'POST'})
-      .then((response) => response.json())
-      .then((j) => {
-        console.log(j);
-      });
-    }
 
   const confirmArtist = () => {
     const selectedArtist = document.querySelector('#popover-basic select').value;
@@ -78,7 +94,6 @@ export const App = () => {
     fetch(`http://localhost:8000/telegram_messages/${currentText.id}/bind/${selectedArtist}`, {method: 'POST'})
       .then((response) => response.json())
       .then((j) => {
-        console.log(j);
         setArtist({ ...artist, loading: false });
         setPopOver({id: null});
       });
@@ -287,7 +302,7 @@ export const App = () => {
       </Table>
     </Row>
     <ButtonGroup>
-      <Button onClick={ sync_telegram_messages }>Mais mensagens</Button>
+      <Button onClick={ get_more_messages }>Mais mensagens</Button>
     </ButtonGroup>
     </Container>
   );
