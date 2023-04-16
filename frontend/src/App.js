@@ -217,21 +217,21 @@ export const App = () => {
       });
   }
 
-  const flagNotMusic = () => {
-    fetch(`http://localhost:8000/telegram_messages/${selectedRow}?is_music=false`, {method: 'PATCH'})
+  const flagNotMusic = (telegram_message_id) => {
+    fetch(`http://localhost:8000/telegram_messages/${telegram_message_id}?is_music=false`, {method: 'PATCH'})
       .then((response) => response.json())
-      .then((j) => {
-        console.log(j);
+      .then((_) => {
         // remove from text by id
-        setText(text.filter((item) => item.id !== selectedRow));
+        setText(text.filter((item) => item.id !== telegram_message_id));
         setPopOver({id: null});
+        setShowDeleteModal(false);
     });
   }
 
   const flagNotMusicModal = (
       <Modal show={ showDeleteModal != null } onHide={ handleCloseDeleteModal }>
         <Modal.Header closeButton>
-          <Modal.Title>{selectedRow} | Este vídeo não é de música?</Modal.Title>
+          <Modal.Title>{showDeleteModal.id} | Este vídeo não é de música?</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p>
@@ -243,7 +243,7 @@ export const App = () => {
           <Button variant="secondary" onClick={ handleCloseDeleteModal }>
             Fechar
           </Button>
-          <Button variant="primary" onClick={ flagNotMusic }>
+          <Button variant="primary" onClick={ () => flagNotMusic(showDeleteModal.id) }>
             Confirmar
           </Button>
         </Modal.Footer>

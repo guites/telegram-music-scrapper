@@ -115,8 +115,10 @@ class TelegramCrud:
         else:
             query = query.filter(TelegramMessage.musicbrainz_artist_id == None)
         
-        if is_music is not None:
+        if is_music is not None and is_music == True:
             query = query.filter(sa.func.coalesce(TelegramMessage.is_music, is_music))
+        else:
+            query = query.filter(TelegramMessage.is_music == is_music)
         
         if offset_id is not None:
             query = query.filter(TelegramMessage.id > offset_id)
