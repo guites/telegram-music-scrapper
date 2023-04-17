@@ -55,9 +55,17 @@ Siga as instruções para cadastrar uma nova sessão para uso do Telegram.
 
 Rode o projeto com
 
-    cd app && uvicorn main:app --reload
+    uvicorn main:app --reload
 
 Você pode verificar a documentação em `http://localhost:8000/docs`.
+
+### Configurando o extrator de entidades nomeadas (NER)
+
+Com os dados gerados na plataforma, podemos treinar um modelo de processamento de linguagem natural (NLP) utilizando a biblioteca [spaCy](https://spacy.io/).
+
+Para isso, você deve ajustar as configurações do modelo de acordo com a arquitetura da sua máquina.
+
+TODO: finish writing this
 
 ## Iniciando o Front End
 

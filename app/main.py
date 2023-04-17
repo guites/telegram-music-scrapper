@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import uvicorn
 
@@ -7,6 +8,7 @@ from fastapi import Depends, HTTPException, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Union
+from unidecode import unidecode
 
 import models
 
@@ -178,6 +180,44 @@ async def update_telegram_message_is_music(
     if telegram_message is None:
         raise HTTPException(status_code=404, detail="Telegram message not found")
     return telegram_message
+
+@app.get("/spacy/dataset")
+def generate_spacy_dataset(
+    db: Session = Depends(get_db),
+):
+    telegram_crud = TelegramCrud(db)
+    telegram_messages = telegram_crud.read_telegram_messages(
+        site_name=None, has_musicbrainz_artist=True, is_music=True
+    )
+    dataset = []
+    for msg in telegram_messages:
+        artist = msg.musicbrainz_artist.name
+        webpage_title = msg.webpage_title
+        webpage_description = msg.webpage_description
+
+        # concatenate title and description, if description is not null
+        if webpage_description is not None:
+            text = webpage_title + " " + webpage_description
+        else:
+            text = webpage_title
+
+        # remove accents and convert to lowercase
+        cleaned_artist = unidecode(artist.lower().strip())
+        cleaned_text = unidecode(text.lower().strip())
+
+        # find every index of artist name in text
+        artist_indices = [m.start() for m in re.finditer(cleaned_artist, cleaned_text)]
+        # create a list of tuples with the start and end index of the artist name
+        artist_spans = [(i, i + len(artist), "artist") for i in artist_indices]
+
+        element = {
+            "text": cleaned_text,
+            "entities": artist_spans,
+            "artist": artist,
+        }
+        dataset.append(element)
+
+    return dataset
 
 
 def main():
