@@ -204,6 +204,7 @@ def generate_spacy_dataset(
         # remove accents and convert to lowercase
         cleaned_artist = unidecode(artist.lower().strip())
         cleaned_text = unidecode(text.lower().strip())
+        cleaned_text = cleaned_text.replace("\n", " ")
 
         # find every index of artist name in text
         artist_indices = [m.start() for m in re.finditer(cleaned_artist, cleaned_text)]
