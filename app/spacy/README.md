@@ -33,6 +33,14 @@ To convert the dataset to spacy's docbin format.
 
 Running the command should result in a `training_data.spacy` file.
 
+## Visualize the dataset
+
+You can run 
+
+    python3 doc_viz.py
+
+To visualize a sample of 30 annotated texts from the dataset.
+
 ## Train the model
 
 You can now train the model using
