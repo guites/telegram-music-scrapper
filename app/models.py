@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -39,7 +39,23 @@ class TelegramMessage(Base):
     musicbrainz_artist = relationship(
         "MusicBrainzArtist", back_populates="telegram_messages"
     )
+    telegram_message_artists = relationship(
+        "TelegramMessageArtist", back_populates="telegram_message"
+    )
 
+class TelegramMessageArtist(Base):
+    __tablename__ = "telegram_message_artists"
+    id = Column(Integer, primary_key=True, index=True)
+    telegram_message_id = Column(Integer, ForeignKey("telegram_messages.id"))
+    artist_name = Column(String)
+
+    # make the combination of telegram_message_id and artist_name unique
+    __table_args__ = (
+        UniqueConstraint("telegram_message_id", "artist_name", name="unique_artist"),
+    )
+    telegram_message = relationship(
+        "TelegramMessage", back_populates="telegram_message_artists"
+    )
 
 class MusicBrainzArtist(Base):
     __tablename__ = "musicbrainz_artists"

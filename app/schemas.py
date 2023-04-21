@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Union
+from typing import List, Union
 
 class MusicBrainzArtistResponse(BaseModel):
     id: str
@@ -19,6 +19,14 @@ class MusicBrainzArtistResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class TelegramMessageArtistResponse(BaseModel):
+    id: int
+    telegram_message_id: int
+    artist_name: str
+
+    class Config:
+        orm_mode = True
+
 
 class TelegramMessageResponse(BaseModel):
     id: int
@@ -32,6 +40,10 @@ class TelegramMessageResponse(BaseModel):
     webpage_description: Union[str, None]
     musicbrainz_artist: Union[MusicBrainzArtistResponse, None]
     is_music: Union[bool, None]
+    telegram_message_artists: List[TelegramMessageArtistResponse]
 
     class Config:
         orm_mode = True
+
+class TelegramMessageArtistCreate(BaseModel):
+    artist_name: str

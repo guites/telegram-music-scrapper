@@ -8,6 +8,7 @@ from typing import List, Union
 from models import (
     MusicBrainzArtist,
     TelegramMessage,
+    TelegramMessageArtist,
     TelegramSession,
 )
 
@@ -89,8 +90,7 @@ class TelegramCrud:
     def read_telegram_messages(
         self,
         site_name: Union[str, None] = None,
-        has_musicbrainz_artist: bool = False,
-        is_music: bool = True,
+        is_music: Union[bool, None] = None,
         offset_id: Union[int, None] = None,
         fields: Union[List[str], None] = None,
     ):
@@ -109,16 +109,11 @@ class TelegramCrud:
 
         if site_name is not None:
             query = query.filter(TelegramMessage.site_name == site_name)
-
-        if has_musicbrainz_artist:
-            query = query.filter(TelegramMessage.musicbrainz_artist_id != None)
-        else:
-            query = query.filter(TelegramMessage.musicbrainz_artist_id == None)
         
-        if is_music is not None and is_music == True:
-            query = query.filter(sa.func.coalesce(TelegramMessage.is_music, is_music))
-        else:
+        if is_music is not None:
             query = query.filter(TelegramMessage.is_music == is_music)
+        else:
+            query = query.filter(TelegramMessage.is_music == None)
         
         if offset_id is not None:
             query = query.filter(TelegramMessage.id > offset_id)
@@ -191,6 +186,15 @@ class TelegramCrud:
         self.db.add(telegram_message)
         self.db.commit()
         return telegram_message
+
+    def register_artist_to_telegram_message(self, message_id, artist_name):
+        telegram_message = self.read_telegram_message(message_id)
+        telegram_message_artist = TelegramMessageArtist(
+            telegram_message_id=telegram_message.id, artist_name=artist_name
+        )
+        self.db.add(telegram_message_artist)
+        self.db.commit()
+        return telegram_message_artist
 
     def update_telegram_message_is_music(self, message_id, is_music):
         telegram_message = self.read_telegram_message(message_id)
