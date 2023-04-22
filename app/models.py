@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -33,31 +33,22 @@ class TelegramMessage(Base):
     webpage_url = Column(String)
     webpage_title = Column(String)
     webpage_description = Column(String)
-    musicbrainz_artist_id = Column(Integer, ForeignKey("musicbrainz_artists.id"))
     is_music = Column(Boolean)
 
-    musicbrainz_artist = relationship(
-        "MusicBrainzArtist", back_populates="telegram_messages"
+    telegram_message_artists = relationship(
+        "TelegramMessageArtist", back_populates="telegram_message"
     )
 
-
-class MusicBrainzArtist(Base):
-    __tablename__ = "musicbrainz_artists"
+class TelegramMessageArtist(Base):
+    __tablename__ = "telegram_message_artists"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    mbid = Column(String, index=True)
-    sort_name = Column(String, index=True)
-    begin_area_name = Column(String)
-    end_area_name = Column(String)
-    country = Column(String)
-    area_name = Column(String)
-    area_sort_name = Column(String)
-    life_span_ended = Column(Boolean)
-    life_span_begin = Column(String)
-    life_span_end = Column(String)
-    type = Column(String)
-    # TODO: track artist genre
+    telegram_message_id = Column(Integer, ForeignKey("telegram_messages.id"))
+    artist_name = Column(String)
 
-    telegram_messages = relationship(
-        "TelegramMessage", back_populates="musicbrainz_artist"
+    # make the combination of telegram_message_id and artist_name unique
+    __table_args__ = (
+        UniqueConstraint("telegram_message_id", "artist_name", name="unique_artist"),
+    )
+    telegram_message = relationship(
+        "TelegramMessage", back_populates="telegram_message_artists"
     )

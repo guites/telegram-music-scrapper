@@ -26,3 +26,7 @@
 .floating-group.visible {
     visibility: visible;
 }
+
+.nlp-suggestion {
+    background-color: #ffcdcd;
+}

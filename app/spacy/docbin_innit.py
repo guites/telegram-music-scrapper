@@ -1,4 +1,3 @@
-import json
 import requests
 import spacy
 
@@ -14,11 +13,12 @@ response = requests.get("http://localhost:8000/spacy/dataset")
 data = response.json()
 
 # loop over dataset and delete "artist" key
-for d in data:
-    del d["artist"]
+for d in data['dataset']:
+    del d['telegram_message_id']
+    del d["artists"]
 
 
-training_data = {'classes': ['artist'], 'annotations': data}
+training_data = {'classes': ['artist'], 'annotations': data['dataset']}
 
 for training_example  in tqdm(training_data['annotations']): 
     text = training_example['text']

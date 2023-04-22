@@ -6,16 +6,17 @@ import uvicorn
 from dask import dataframe as dd
 from fastapi import Depends, HTTPException, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import List, Union
 from unidecode import unidecode
 
 import models
 
-from crud import MusicBrainzArtistCrud, TelegramCrud, TelegramSessionCrud
+from crud import TelegramCrud, TelegramSessionCrud
 from database import SessionLocal, engine
 from RapidFuzz import RapidFuzz
-from schemas import TelegramMessageResponse
+from schemas import TelegramMessageResponse, TelegramMessageArtistCreate, TelegramMessageArtistResponse
 from TelegramApi import TelegramApi
 from utils import check_artist_names_file
 
@@ -54,37 +55,19 @@ def get_db():
         db.close()
 
 
-ARTISTS_FILE_PATH = check_artist_names_file()
-
-# TODO: this information is available on the musicbrainz_artist table
-ARTISTS_LIST = dd.read_csv(ARTISTS_FILE_PATH, sep=";")["artist"]
-ARTISTS_FUZZ = RapidFuzz(ARTISTS_LIST)
-
-
-@app.get("/musicbrainz_artists/search")
-async def fuzzy_search_artist(name: str):
-    return ARTISTS_FUZZ.extract_single(name, 5)
-
-
-@app.get("/musicbrainz_artists/{artist_id}")
-def read_artist(artist_id: int, db: Session = Depends(get_db)):
-    artist_crud = MusicBrainzArtistCrud(db)
-    artist = artist_crud.get_artist(artist_id)
-    if artist is None:
-        raise HTTPException(status_code=404, detail="Artist not found")
-    return artist
-
-
-@app.post("/telegram_messages/{telegram_message_id}/bind/{musicbrainz_artist_id}")
-async def bind_telegram_message_to_musicbrainz_artist(
-    telegram_message_id: int, musicbrainz_artist_id: int, db: Session = Depends(get_db)
+@app.post("/telegram_messages/{telegram_message_id}/artist", status_code=201, response_model=TelegramMessageArtistResponse)
+def register_artist_to_telegram_message(
+    telegram_message_id: int, artist: TelegramMessageArtistCreate, db: Session = Depends(get_db)
 ):
     telegram_crud = TelegramCrud(db)
-
-    telegram_message = telegram_crud.bind_telegram_message_to_musicbrainz_artist(
-        telegram_message_id, musicbrainz_artist_id - 1
-    )
-    return telegram_message
+    try:
+        telegram_message_artist = telegram_crud.register_artist_to_telegram_message(
+            telegram_message_id, artist.artist_name
+        )
+    except IntegrityError as e:
+        print(str(e))
+        raise HTTPException(status_code=400, detail="Artist already registered to telegram message.")
+    return telegram_message_artist
 
 
 @app.get("/telegram_messages/site_names")
@@ -97,8 +80,7 @@ async def read_telegram_message_site_names(db: Session = Depends(get_db)):
 @app.get("/telegram_messages", response_model=List[TelegramMessageResponse])
 async def read_telegram_messages(
     site_name: Union[str, None] = None,
-    has_musicbrainz_artist: bool = False,
-    is_music: bool = True,
+    is_music: Union[bool, None] = None,
     fields: List[str] = Query(None),
     offset_id: Union[int, None] = None,
     db: Session = Depends(get_db),
@@ -106,7 +88,7 @@ async def read_telegram_messages(
     telegram_crud = TelegramCrud(db)
     try:
         telegram_messages = telegram_crud.read_telegram_messages(
-            site_name, has_musicbrainz_artist, is_music, offset_id, fields
+            site_name, is_music, offset_id, fields
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -187,11 +169,14 @@ def generate_spacy_dataset(
 ):
     telegram_crud = TelegramCrud(db)
     telegram_messages = telegram_crud.read_telegram_messages(
-        site_name=None, has_musicbrainz_artist=True, is_music=True
+        is_music=True
     )
     dataset = []
     for msg in telegram_messages:
-        artist = msg.musicbrainz_artist.name
+        artists = msg.telegram_message_artists
+        if len(artists) == 0:
+            continue
+
         webpage_title = msg.webpage_title
         webpage_description = msg.webpage_description
 
@@ -202,23 +187,31 @@ def generate_spacy_dataset(
             text = webpage_title
 
         # remove accents and convert to lowercase
-        cleaned_artist = unidecode(artist.lower().strip())
         cleaned_text = unidecode(text.lower().strip())
         cleaned_text = cleaned_text.replace("\n", " ")
 
-        # find every index of artist name in text
-        artist_indices = [m.start() for m in re.finditer(cleaned_artist, cleaned_text)]
-        # create a list of tuples with the start and end index of the artist name
-        artist_spans = [(i, i + len(artist), "artist") for i in artist_indices]
+        cleaned_artists = [unidecode(artist.artist_name.lower().strip()) for artist in artists]
+
+        spans = []
+        for cleaned_artist in cleaned_artists:
+            # find every index of artist name in text
+            artist_indices = [m.start() for m in re.finditer(cleaned_artist, cleaned_text)]
+            # create a list of tuples with the start and end index of the artist name
+            artist_spans = [(i, i + len(cleaned_artist), "artist") for i in artist_indices]
+            spans = spans + artist_spans
 
         element = {
             "text": cleaned_text,
-            "entities": artist_spans,
-            "artist": artist,
+            "entities": spans,
+            "artists": cleaned_artists,
+            "telegram_message_id": msg.id,
         }
         dataset.append(element)
 
-    return dataset
+    return {
+        "count": len(dataset),
+        "dataset": dataset,
+    }
 
 
 def main():
