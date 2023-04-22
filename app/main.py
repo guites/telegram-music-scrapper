@@ -1,5 +1,6 @@
 import os
 import re
+import spacy
 import time
 import uvicorn
 
@@ -213,6 +214,32 @@ def generate_spacy_dataset(
         "dataset": dataset,
     }
 
+
+@app.get("/spacy/inference")
+def spacy_inference(
+    video_title: str,
+    video_description: str = None,
+    db: Session = Depends(get_db),
+):
+    MODEL_PATH = "/home/guites/Projects/telegram-music-scrapper/app/spacy/models/macos-1/model-best"
+    nlp_ner = spacy.load(MODEL_PATH)
+
+    # concatenate title and description, if description is not null
+    if video_description is not None:
+        text = video_title + " " + video_description
+    else:
+        text = video_title
+
+    # remove accents and convert to lowercase
+    cleaned_text = unidecode(text.lower().strip())
+    cleaned_text = cleaned_text.replace("\n", " ")
+
+    doc = nlp_ner(cleaned_text)
+
+    return [(ent.text, ent.label_) for ent in doc.ents]
+    
+
+    
 
 def main():
     uvicorn.run(app, host="0.0.0.0", port=8000)
