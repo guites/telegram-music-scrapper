@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { read_telegram_messages, sync_telegram_messages } from './requests';
 import Table from 'react-bootstrap/Table';
+import Badge from 'react-bootstrap/Badge';
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import Container from 'react-bootstrap/Container';
@@ -11,6 +12,7 @@ import Popover from 'react-bootstrap/Popover';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 import './App.css';
+import ch00nky from './ch00nky.gif';
 
 export const App = () => {
   const [selectedRow, setSelectedRow] = useState(null);
@@ -138,15 +140,51 @@ export const App = () => {
     </Popover>
   );
 
-  const renderWhenSelected = (
-    <div>
-      {popOver.beforeText}
-        <OverlayTrigger show={popOver.id !== null} placement="right" overlay={selectedArtistPopover}>
-          <mark>{popOver.selectedText}</mark>
-        </OverlayTrigger>
-      {popOver.afterText}
-    </div>
-  )
+  const renderWithMarks = (id, text) => {
+    if (!text) return;
+    
+    if (id === popOver.id) {
+      const regex = new RegExp(popOver.selectedText, 'gi');
+
+      // save the index of each match in the original text
+      const indexPairs = []
+      let matchArr = null;
+      while (null != (matchArr = regex.exec(text))) {
+        indexPairs.push([matchArr.index, regex.lastIndex])
+      }
+
+      if (indexPairs.length === 0) {
+        return <div>{text}</div>;
+      }
+
+      const renderedText = [];
+      // push the text before the first match
+      renderedText.push(text.substring(0, indexPairs[0][0]));
+      for (const [i, pair] of indexPairs.entries()) {
+        // push the text between the latest match and the beggining of the current match
+        
+        if (i > 0) {
+          renderedText.push(text.substring(indexPairs[i - 1][1], pair[0]));
+        }
+        
+        // if the index matches the index of the selected text, substitute with the popover using the overlay trigger
+        if (pair[0] === popOver.textIndex) {
+          renderedText.push(
+            <OverlayTrigger show={popOver.id !== null} placement="right" overlay={selectedArtistPopover}>
+              <mark>{popOver.selectedText}</mark>
+            </OverlayTrigger>
+          );
+        } else {
+          renderedText.push(<mark>{text.substring(pair[0], pair[1])}</mark>);
+        }
+      }
+      // push the text after the last match
+      renderedText.push(text.substring(indexPairs[indexPairs.length - 1][1]));
+      return renderedText;
+    }
+
+    return text;
+  }
 
   const handleMouseUp = async (e) => {
     const windowSelection = window.getSelection();
@@ -175,26 +213,24 @@ export const App = () => {
       const popOverInTitle = elClassName === 'webpage_title';
       
       setArtist({ ...artist });
-
+      let index;
       if (popOverInTitle) {
-        const index = currentText.webpage_title.indexOf(selectedStr);
+        index = currentText.webpage_title.indexOf(selectedStr);
         currentText.selectedText = selectedStr;
         currentText.beforeText = currentText.webpage_title.substring(0, index);
         currentText.afterText = currentText.webpage_title.substring(index + selectedStr.length);
       } else {
-        const index = currentText.webpage_description.indexOf(selectedStr);
+        index = currentText.webpage_description.indexOf(selectedStr);
         currentText.selectedText = selectedStr;
         currentText.beforeText = currentText.webpage_description.substring(0, index);
         currentText.afterText = currentText.webpage_description.substring(index + selectedStr.length);
       }
       
       // show popover
-      setPopOver({...currentText, inTitle: popOverInTitle});
+      setPopOver({...currentText, inTitle: popOverInTitle, textIndex: index});
 
       // update text with new currentText
       setText(text.map((item) => item.id === currentText.id ? currentText : item));
-
-      // submitArtist(selectedStr);
     }
   }
 
@@ -234,19 +270,20 @@ export const App = () => {
   return (
     <Container>
     <Row>
-      <h1>Marcação de artistas</h1>
-      <p>Nos ajude a encontrar nomes de artistas ou bandas no título e descrição dos vídeos listados abaixo.</p>
-      <p>As marcações vão ser utilizadas para o treinamento de um modelo de PLN (processamento de linguagem natural) com o objetivo de automatizar esse processo.</p>
+      <div style={{display: "flex"}}><h1>Band Hunter</h1>&nbsp;<small><Badge bg="secondary">alpha</Badge></small></div>
+      <p><img style={{maxWidth: "300px", float: "left"}} src={ch00nky} alt="Chunky Kong" />Ajude a encontrar nomes de artistas ou bandas no título e descrição dos vídeos listados abaixo!<br/><br/>❓Para marcar um artista ou banda, selecione o texto com o mouse e confirme no popover.<br/><br/>Palavras <mark>grifadas em amarelo</mark> representam marcações feitas pelo usuário.<br/>Palavras <mark className="nlp-suggestion">grifadas em vermelho</mark> são sugestões do sistema.<br/><br/>❗Clique nas sugestões do sistema para aceitá-las ou recusá-las.</p>
+      <p>✅ Marque os vídeos como concluídos após achar todas as bandas e artistas.</p>
+      <p>❌ Sinalize vídeos que não são de música.</p>
+      <p></p>
     </Row>
     <Row>
-    <Table size="sm" striped bordered hover>
+    <Table size="sm" striped bordered hover responsive>
         <thead>
           <tr>
             <th>#</th>
             <th>Mensagem</th>
-            <th>Origem</th>
-            <th>Título da Página</th>
-            <th>Descrição da Página</th>
+            <th>Título</th>
+            <th>Descrição</th>
           </tr>
         </thead>
         <tbody>
@@ -277,15 +314,14 @@ export const App = () => {
                 { showIsMusicModal && setIsMusicModal }
               </td>
               <td>{row.message}</td>
-              <td>{row.site_name}</td>
               <td className="webpage_title">
                 <div>
-                  { (popOver.id === row.id && popOver.inTitle) ? renderWhenSelected : row.webpage_title }
+                { renderWithMarks(row.id, row.webpage_title) }
                 </div>
               </td>
               <td className="webpage_description">
                 <div>
-                  { (popOver.id === row.id && !popOver.inTitle) ? renderWhenSelected : row.webpage_description }
+                  {renderWithMarks(row.id, row.webpage_description)}
                 </div>
               </td>
             </tr>
