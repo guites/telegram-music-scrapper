@@ -33,12 +33,8 @@ class TelegramMessage(Base):
     webpage_url = Column(String)
     webpage_title = Column(String)
     webpage_description = Column(String)
-    musicbrainz_artist_id = Column(Integer, ForeignKey("musicbrainz_artists.id"))
     is_music = Column(Boolean)
 
-    musicbrainz_artist = relationship(
-        "MusicBrainzArtist", back_populates="telegram_messages"
-    )
     telegram_message_artists = relationship(
         "TelegramMessageArtist", back_populates="telegram_message"
     )
@@ -55,25 +51,4 @@ class TelegramMessageArtist(Base):
     )
     telegram_message = relationship(
         "TelegramMessage", back_populates="telegram_message_artists"
-    )
-
-class MusicBrainzArtist(Base):
-    __tablename__ = "musicbrainz_artists"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    mbid = Column(String, index=True)
-    sort_name = Column(String, index=True)
-    begin_area_name = Column(String)
-    end_area_name = Column(String)
-    country = Column(String)
-    area_name = Column(String)
-    area_sort_name = Column(String)
-    life_span_ended = Column(Boolean)
-    life_span_begin = Column(String)
-    life_span_end = Column(String)
-    type = Column(String)
-    # TODO: track artist genre
-
-    telegram_messages = relationship(
-        "TelegramMessage", back_populates="musicbrainz_artist"
     )

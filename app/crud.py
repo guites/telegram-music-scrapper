@@ -6,26 +6,10 @@ from sqlalchemy.orm import load_only, Session
 from typing import List, Union
 
 from models import (
-    MusicBrainzArtist,
     TelegramMessage,
     TelegramMessageArtist,
     TelegramSession,
 )
-
-
-class MusicBrainzArtistCrud:
-    def __init__(self, db: Session):
-        self.db = db
-
-    def get_artists(self):
-        return self.db.query(MusicBrainzArtist).all()
-
-    def get_artist(self, artist_id):
-        return (
-            self.db.query(MusicBrainzArtist)
-            .filter(MusicBrainzArtist.id == artist_id)
-            .first()
-        )
 
 
 class TelegramSessionCrud:
@@ -177,15 +161,6 @@ class TelegramCrud:
         if earliest_message is None:
             return 0
         return earliest_message.telegram_id
-
-    def bind_telegram_message_to_musicbrainz_artist(
-        self, message_id, musicbrainz_artist_id
-    ):
-        telegram_message = self.read_telegram_message(message_id)
-        telegram_message.musicbrainz_artist_id = musicbrainz_artist_id
-        self.db.add(telegram_message)
-        self.db.commit()
-        return telegram_message
 
     def register_artist_to_telegram_message(self, message_id, artist_name):
         telegram_message = self.read_telegram_message(message_id)

@@ -5,7 +5,6 @@ const read_telegram_messages = async (offset_id) => {
 
     const params = {
         site_name: 'YouTube',
-        has_musicbrainz_artist: false,
     };
     if (offset_id !== null) {
         params.offset_id = offset_id;

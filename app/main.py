@@ -13,7 +13,7 @@ from unidecode import unidecode
 
 import models
 
-from crud import MusicBrainzArtistCrud, TelegramCrud, TelegramSessionCrud
+from crud import TelegramCrud, TelegramSessionCrud
 from database import SessionLocal, engine
 from RapidFuzz import RapidFuzz
 from schemas import TelegramMessageResponse, TelegramMessageArtistCreate, TelegramMessageArtistResponse
@@ -53,27 +53,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-ARTISTS_FILE_PATH = check_artist_names_file()
-
-# TODO: this information is available on the musicbrainz_artist table
-ARTISTS_LIST = dd.read_csv(ARTISTS_FILE_PATH, sep=";")["artist"]
-ARTISTS_FUZZ = RapidFuzz(ARTISTS_LIST)
-
-
-@app.get("/musicbrainz_artists/search")
-async def fuzzy_search_artist(name: str):
-    return ARTISTS_FUZZ.extract_single(name, 5)
-
-
-@app.get("/musicbrainz_artists/{artist_id}")
-def read_artist(artist_id: int, db: Session = Depends(get_db)):
-    artist_crud = MusicBrainzArtistCrud(db)
-    artist = artist_crud.get_artist(artist_id)
-    if artist is None:
-        raise HTTPException(status_code=404, detail="Artist not found")
-    return artist
 
 
 @app.post("/telegram_messages/{telegram_message_id}/artist", status_code=201, response_model=TelegramMessageArtistResponse)
