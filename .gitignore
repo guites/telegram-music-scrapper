@@ -3,6 +3,5 @@
 **/*.session
 **/mtproto-server
 .ipynb_checkpoints/
-*.json
 **/*.db
 **/__pycache__
