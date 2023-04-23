@@ -7,12 +7,14 @@ import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import Container from 'react-bootstrap/Container';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
 import Tooltip from 'react-bootstrap/Tooltip';
 import Popover from 'react-bootstrap/Popover';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 import './App.css';
 import ch00nky from './ch00nky.gif';
+import escapeRegExp from './escapeRegex';
 
 export const App = () => {
   const [selectedRow, setSelectedRow] = useState(null);
@@ -39,6 +41,59 @@ export const App = () => {
     
   const findById = (id) => {
     return text.find((item) => item.id === id);
+  }
+
+  const getSuggestions = async () => {
+    const request = await fetch(
+      `http://localhost:8000/telegram_messages/suggestions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(text.map((item) => parseInt(item.id)))
+      });
+    const response = await request.json();
+
+    // loop over the response and update the text array
+    const new_text = [...text];
+    response.forEach((row, _) => {
+      const index = new_text.findIndex((item) => item.id === row.id);
+
+      // if suggestions is not defined or does not have 'webpage_title' and 'webpage_description' keys, return
+      if (!row.suggestions || !row.suggestions['webpage_title'] || !row.suggestions['webpage_description']) {
+        return;
+      }
+
+      // if webpage_title suggestions are empty, return
+      if (row.suggestions['webpage_title'].length === 0) {
+        return;
+      }
+
+      const title_suggestions = row.suggestions['webpage_title'];
+      
+      const renderedWebpageTitle = [];
+      
+      // push the text before the first match, if any
+      if (title_suggestions[0][0] > 0) {
+        renderedWebpageTitle.push(row.webpage_title.substring(0, title_suggestions[0][0]));
+      }
+      
+      for (const [i, pair] of title_suggestions.entries()) {
+        // push the text between the latest match and the beggining of the current match
+        
+        if (i > 0) {
+          renderedWebpageTitle.push(row.webpage_title.substring(title_suggestions[i - 1][1], pair[0]));
+        }
+        
+        renderedWebpageTitle.push(<mark className="nlp-suggestion">{row.webpage_title.substring(pair[0], pair[1])}</mark>);
+      }
+      // push the text after the last match
+      renderedWebpageTitle.push(row.webpage_title.substring(title_suggestions[title_suggestions.length - 1][1]));
+      row.webpage_title = renderedWebpageTitle;
+      new_text[index] = row;
+    });
+    console.log(new_text);
+    setText(new_text);
   }
 
   const request_telegram_messages = useCallback(async () => {
@@ -98,7 +153,7 @@ export const App = () => {
   // fetch table data from backend
   useEffect(() => {
     request_telegram_messages();
-  }, []);
+  }, [request_telegram_messages]);
 
   const confirmArtist = async (artist_name) => {
     const currentText = findById(selectedRow);
@@ -140,31 +195,97 @@ export const App = () => {
     </Popover>
   );
 
-  const renderWithMarks = (id, text) => {
+  const createMarkStructure = (content) => {
+
+    if (typeof content === 'string') {
+      return {
+        "content": content,
+        "structure": [
+          {
+            "start": 0,
+            "end": content.length,
+            "content": content,
+            "type": "string"
+          }
+        ]
+      };
+    }
+
+    let stringContent = '', children = null;
+    const indexes = [];
+
+    for (const [i, el] of content.entries()) {
+      if (typeof el === 'string') {
+        indexes.push({
+          "start": i === 0 ? 0 : indexes[i - 1].end,
+          "end": i === 0 ? el.length : indexes[i - 1].end + el.length,
+          "content": el,
+          "type": "string"
+        });
+        stringContent = stringContent + el;
+        continue;
+      }
+
+      children = el.props.children;
+      if (typeof children !== 'string' && children.hasOwnProperty('props')) {
+        children = children.props.children;
+      }
+      indexes.push({
+        "start": i === 0 ? 0 : indexes[i - 1].end,
+        "end": i === 0 ? children.length : indexes[i - 1].end + children.length,
+        "content": children,
+        "type": "mark"
+      });
+      stringContent = stringContent + el.props.children;
+    }
+
+    return {
+      "content": stringContent,
+      "structure": indexes
+    }
+  }
+
+  const renderWithMarks = (row, type) => {
+    if (!row) return;
+    
+    const id = row.id;
+    const text = row[type];
+
     if (!text) return;
+
+    const indexPairs = [];
+    let matchArr = null;
     
     if (id === popOver.id) {
-      const regex = new RegExp(popOver.selectedText, 'gi');
+      // get the raw text and the indexes of existing marks, in case the text has been
+      // processed by another function
+      const { content: stringText, structure: prevIndexes } = createMarkStructure(text);
 
-      // save the index of each match in the original text
-      const indexPairs = []
-      let matchArr = null;
-      while (null != (matchArr = regex.exec(text))) {
+      if (type === 'webpage_title') {
+        console.log("prevIndexes", prevIndexes);
+        console.log("stringText", stringText);
+      }
+
+      const regex = new RegExp(escapeRegExp(popOver.selectedText), 'gi');
+      matchArr = null;
+      while (null != (matchArr = regex.exec(stringText))) {
         indexPairs.push([matchArr.index, regex.lastIndex])
       }
 
       if (indexPairs.length === 0) {
         return <div>{text}</div>;
       }
-
+      
       const renderedText = [];
-      // push the text before the first match
-      renderedText.push(text.substring(0, indexPairs[0][0]));
+      // push the text before the first match, if there is any
+      if (indexPairs[0][0] > 0) {
+        renderedText.push(stringText.substring(0, indexPairs[0][0]));
+      }
       for (const [i, pair] of indexPairs.entries()) {
         // push the text between the latest match and the beggining of the current match
         
         if (i > 0) {
-          renderedText.push(text.substring(indexPairs[i - 1][1], pair[0]));
+          renderedText.push(stringText.substring(indexPairs[i - 1][1], pair[0]));
         }
         
         // if the index matches the index of the selected text, substitute with the popover using the overlay trigger
@@ -175,12 +296,19 @@ export const App = () => {
             </OverlayTrigger>
           );
         } else {
-          renderedText.push(<mark>{text.substring(pair[0], pair[1])}</mark>);
+          renderedText.push(<mark>{stringText.substring(pair[0], pair[1])}</mark>);
         }
       }
       // push the text after the last match
-      renderedText.push(text.substring(indexPairs[indexPairs.length - 1][1]));
+      renderedText.push(stringText.substring(indexPairs[indexPairs.length - 1][1]));
+
+      const { structure: newIndexes } = createMarkStructure(renderedText);
+
+      if (type === 'webpage_title') {
+        console.log("newIndexes", newIndexes);
+      }
       return renderedText;
+
     }
 
     return text;
@@ -217,13 +345,13 @@ export const App = () => {
       if (popOverInTitle) {
         index = currentText.webpage_title.indexOf(selectedStr);
         currentText.selectedText = selectedStr;
-        currentText.beforeText = currentText.webpage_title.substring(0, index);
-        currentText.afterText = currentText.webpage_title.substring(index + selectedStr.length);
+        // currentText.beforeText = currentText.webpage_title.substring(0, index);
+        // currentText.afterText = currentText.webpage_title.substring(index + selectedStr.length);
       } else {
         index = currentText.webpage_description.indexOf(selectedStr);
         currentText.selectedText = selectedStr;
-        currentText.beforeText = currentText.webpage_description.substring(0, index);
-        currentText.afterText = currentText.webpage_description.substring(index + selectedStr.length);
+        // currentText.beforeText = currentText.webpage_description.substring(0, index);
+        // currentText.afterText = currentText.webpage_description.substring(index + selectedStr.length);
       }
       
       // show popover
@@ -252,7 +380,7 @@ export const App = () => {
         </Modal.Header>
         <Modal.Body>
           <p>
-            <a href={showIsMusicModal.webpage_url} target="_blank">{showIsMusicModal?.webpage_title}</a>
+            <a href={showIsMusicModal.webpage_url} rel="noreferrer" target="_blank">{showIsMusicModal?.webpage_title}</a>
           </p>
           <p style={{maxHeight: "300px", overflowY: "scroll", whiteSpace: "pre-line"}}>{showIsMusicModal?.webpage_description}</p>
         </Modal.Body>
@@ -275,6 +403,13 @@ export const App = () => {
       <p>✅ Marque os vídeos como concluídos após achar todas as bandas e artistas.</p>
       <p>❌ Sinalize vídeos que não são de música.</p>
       <p></p>
+    </Row>
+    <Row>
+      <Col>
+        <Button onClick={() => getSuggestions()}>
+          Ver sugestões
+        </Button>
+      </Col>
     </Row>
     <Row>
     <Table size="sm" striped bordered hover responsive>
@@ -316,12 +451,12 @@ export const App = () => {
               <td>{row.message}</td>
               <td className="webpage_title">
                 <div>
-                { renderWithMarks(row.id, row.webpage_title) }
+                { renderWithMarks(row, "webpage_title") }
                 </div>
               </td>
               <td className="webpage_description">
                 <div>
-                  {renderWithMarks(row.id, row.webpage_description)}
+                  {renderWithMarks(row, "webpage_description")}
                 </div>
               </td>
             </tr>
