@@ -4,7 +4,6 @@ import spacy
 import time
 import uvicorn
 
-from dask import dataframe as dd
 from fastapi import Depends, HTTPException, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
@@ -16,10 +15,9 @@ import models
 
 from crud import TelegramCrud, TelegramSessionCrud
 from database import SessionLocal, engine
-from RapidFuzz import RapidFuzz
-from schemas import TelegramMessageResponse, TelegramMessageArtistCreate, TelegramMessageArtistResponse
+from definitions import SPACY_MODEL_PATH
+from schemas import TelegramMessageResponse, TelegramMessageResponseWithSuggestions, TelegramMessageArtistCreate, TelegramMessageArtistResponse
 from TelegramApi import TelegramApi
-from utils import check_artist_names_file
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -163,6 +161,70 @@ async def update_telegram_message_is_music(
     if telegram_message is None:
         raise HTTPException(status_code=404, detail="Telegram message not found")
     return telegram_message
+
+@app.post("/telegram_messages/suggestions", response_model=List[TelegramMessageResponseWithSuggestions])
+async def get_spacy_nlp_suggestions(
+    telegram_message_ids: List[int],
+    db: Session = Depends(get_db),
+):
+    # get the messages from the database
+    telegram_crud = TelegramCrud(db)
+    telegram_messages = telegram_crud.read_telegram_messages_by_ids(telegram_message_ids)
+
+    # load the spacy model
+    if SPACY_MODEL_PATH is None or not os.path.exists(SPACY_MODEL_PATH):
+        raise HTTPException(status_code=500, detail="No available spaCy model was found.")
+    nlp_ner = spacy.load(SPACY_MODEL_PATH)
+
+    # for each message, concatenate the title and description and run the spacy model
+    for msg in telegram_messages:
+        # skip if message is not webpage or if website is not youtube
+        if not msg.is_webpage or msg.site_name != "YouTube":
+            continue
+        
+        # get the title and description
+        video_title = msg.webpage_title
+        video_description = msg.webpage_description
+
+        # concatenate title and description, if description is not null
+        if video_description is not None:
+            text = video_title + " " + video_description
+        else:
+            text = video_title
+
+        # remove accents and convert to lowercase
+        # cleaned_text = unidecode(text.lower().strip())
+        cleaned_text = text.replace("\n", " ").strip()
+
+        # run the spacy model
+        doc = nlp_ner(cleaned_text)
+
+        # save suggestions to the message object
+        suggestions = {
+            "webpage_title": [],
+            "webpage_description": []
+        }
+        for ent in doc.ents:
+
+            title_text_start = video_title.find(ent.text)
+            if title_text_start != -1:
+
+                # check if there isnt a suggestion for the same text with the same start and end index
+                # this is to avoid duplicates
+                if not any(suggestion[0] == title_text_start and suggestion[1] == title_text_start + len(ent.text) for suggestion in suggestions["webpage_title"]):
+                    suggestions["webpage_title"].append((title_text_start, title_text_start + len(ent.text), ent.text))
+
+            if video_description is not None:
+                descr_text_start = video_description.find(ent.text)
+                if descr_text_start != -1:
+                    if not any(suggestion[0] == descr_text_start and suggestion[1] == descr_text_start + len(ent.text) for suggestion in suggestions["webpage_description"]):
+                        suggestions["webpage_description"].append((descr_text_start, descr_text_start + len(ent.text), ent.text))
+                
+        msg.suggestions = suggestions
+    return telegram_messages
+
+
+
 
 @app.get("/spacy/dataset")
 def generate_spacy_dataset(

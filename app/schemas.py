@@ -26,5 +26,8 @@ class TelegramMessageResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class TelegramMessageResponseWithSuggestions(TelegramMessageResponse):
+    suggestions: dict
+
 class TelegramMessageArtistCreate(BaseModel):
     artist_name: str

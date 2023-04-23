@@ -179,3 +179,10 @@ class TelegramCrud:
         self.db.add(telegram_message)
         self.db.commit()
         return telegram_message
+
+    def read_telegram_messages_by_ids(self, message_ids):
+        return (
+            self.db.query(TelegramMessage)
+            .filter(TelegramMessage.id.in_(message_ids))
+            .all()
+        )
