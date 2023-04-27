@@ -1,23 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Badge, Button, ButtonGroup } from 'react-bootstrap';
+import { Col, Container } from 'react-bootstrap';
+import Form from 'react-bootstrap/Form';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
+import Popover from 'react-bootstrap/Popover';
+import Row from 'react-bootstrap/Row';
+import { Table, Tooltip } from 'react-bootstrap';
+
+import './App.css';
+import ch00nky from './ch00nky.gif';
+import escapeRegExp from './escapeRegex';
+import ParsedBlock from './components/parsedBlock';
+import SetIsMusicModal from './components/isMusicModal';
 import {
     read_telegram_messages,
     sync_telegram_messages,
 } from './requests';
-import Table from 'react-bootstrap/Table';
-import Badge from 'react-bootstrap/Badge';
-import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import Container from 'react-bootstrap/Container';
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Tooltip from 'react-bootstrap/Tooltip';
-import Popover from 'react-bootstrap/Popover';
-import Form from 'react-bootstrap/Form';
-import Modal from 'react-bootstrap/Modal';
-import './App.css';
-import ch00nky from './ch00nky.gif';
-import escapeRegExp from './escapeRegex';
 
 export const App = () => {
     const [selectedRow, setSelectedRow] = useState(null);
@@ -33,20 +31,39 @@ export const App = () => {
             webpage_description: null,
             webpage_title: null,
             selectedText: null,
+            parsed_description: null,
+            parsed_title: null,
         },
     ]);
     const [gettingMoreMessages, setGettingMoreMessages] = useState(false);
 
     const [showIsMusicModal, setShowIsMusicModal] = useState(false);
-    const handleShowIsMusicModal = isMusic =>
+    const handleShowIsMusicModal = isMusic => {
+        console.log(isMusic, selectedRow, findById(selectedRow));
         setShowIsMusicModal({
             ...findById(selectedRow),
             isMusic: isMusic,
         });
+    };
+
     const handleCloseIsMusicModal = () => setShowIsMusicModal(false);
 
     const findById = id => {
         return rows.find(item => item.id === id);
+    };
+
+    const setIsMusicFlag = async (telegram_message_id, is_music) => {
+        const request = await fetch(
+            `http://localhost:8000/telegram_messages/${telegram_message_id}?is_music=${is_music}`,
+            { method: 'PATCH' },
+        );
+
+        // TODO: handle errors
+        const response = await request.json();
+
+        setRows(rows.filter(item => item.id !== telegram_message_id));
+        setPopOver({ id: null });
+        setShowIsMusicModal(false);
     };
 
     const createStructFromSuggestions = (suggestions, content) => {
@@ -100,94 +117,18 @@ export const App = () => {
             if (
                 !row.suggestions ||
                 !row.suggestions['webpage_title'] ||
-                row.suggestions['webpage_title'].length == 0
+                row.suggestions['webpage_title'].length === 0
             )
                 return;
             const title_suggestions = row.suggestions['webpage_title'];
 
-            const index = new_rows.findIndex(item => item.id === row.id);
-        });
-    };
-
-    const getSuggestions = async () => {
-        const request = await fetch(
-            `http://localhost:8000/telegram_messages/suggestions`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(rows.map(item => parseInt(item.id))),
-            },
-        );
-        const response = await request.json();
-
-        // loop over the response and update the text array
-        const new_text = [...rows];
-        response.forEach((row, _) => {
-            const index = new_text.findIndex(item => item.id === row.id);
-
-            // if suggestions is not defined or does not have 'webpage_title' and 'webpage_description' keys, return
-            if (
-                !row.suggestions ||
-                !row.suggestions['webpage_title'] ||
-                !row.suggestions['webpage_description']
-            ) {
-                return;
-            }
-
-            // if webpage_title suggestions are empty, return
-            if (row.suggestions['webpage_title'].length === 0) {
-                return;
-            }
-
-            const title_suggestions = row.suggestions['webpage_title'];
-            console.log(
-                createStructFromSuggestions(
-                    title_suggestions,
-                    row.webpage_title,
-                ),
+            const new_row = new_rows.findIndex(item => item.id === row.id);
+            new_rows[new_row].parsed_title = createStructFromSuggestions(
+                title_suggestions,
+                row.webpage_title,
             );
-            const renderedWebpageTitle = [];
-
-            // push the text before the first match, if any
-            if (title_suggestions[0][0] > 0) {
-                renderedWebpageTitle.push(
-                    row.webpage_title.substring(
-                        0,
-                        title_suggestions[0][0],
-                    ),
-                );
-            }
-
-            for (const [i, pair] of title_suggestions.entries()) {
-                // push the text between the latest match and the beggining of the current match
-
-                if (i > 0) {
-                    renderedWebpageTitle.push(
-                        row.webpage_title.substring(
-                            title_suggestions[i - 1][1],
-                            pair[0],
-                        ),
-                    );
-                }
-
-                renderedWebpageTitle.push(
-                    <mark className="nlp-suggestion">
-                        {row.webpage_title.substring(pair[0], pair[1])}
-                    </mark>,
-                );
-            }
-            // push the text after the last match
-            renderedWebpageTitle.push(
-                row.webpage_title.substring(
-                    title_suggestions[title_suggestions.length - 1][1],
-                ),
-            );
-            row.webpage_title = renderedWebpageTitle;
-            new_text[index] = row;
         });
-        setRows(new_text);
+        setRows(new_rows);
     };
 
     const request_telegram_messages = useCallback(async () => {
@@ -201,6 +142,14 @@ export const App = () => {
                 webpage_url: row.webpage_url,
                 webpage_description: row.webpage_description,
                 webpage_title: row.webpage_title,
+                parsed_title: createStructFromSuggestions(
+                    [],
+                    row.webpage_title,
+                ),
+                parsed_description: createStructFromSuggestions(
+                    [],
+                    row.webpage_description,
+                ),
                 selectedText: null,
             });
         });
@@ -236,6 +185,14 @@ export const App = () => {
                     webpage_url: row.webpage_url,
                     webpage_description: row.webpage_description,
                     webpage_title: row.webpage_title,
+                    parsed_title: createStructFromSuggestions(
+                        [],
+                        row.webpage_title,
+                    ),
+                    parsed_description: createStructFromSuggestions(
+                        [],
+                        row.webpage_description,
+                    ),
                     selectedText: null,
                 });
             }
@@ -504,76 +461,6 @@ export const App = () => {
         }
     };
 
-    const setIsMusicFlag = async (telegram_message_id, is_music) => {
-        const request = await fetch(
-            `http://localhost:8000/telegram_messages/${telegram_message_id}?is_music=${is_music}`,
-            { method: 'PATCH' },
-        );
-        const response = await request.json();
-
-        // TODO: handle errors
-        setRows(rows.filter(item => item.id !== telegram_message_id));
-        setPopOver({ id: null });
-        setShowIsMusicModal(false);
-    };
-
-    const setIsMusicModal = (
-        <Modal
-            show={showIsMusicModal != null}
-            onHide={handleCloseIsMusicModal}
-        >
-            <Modal.Header closeButton>
-                <Modal.Title>
-                    {showIsMusicModal.id} |{' '}
-                    {showIsMusicModal.isMusic
-                        ? 'Marcou todos os artistas?'
-                        : 'Este vídeo não é de música?'}
-                </Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <p>
-                    <a
-                        href={showIsMusicModal.webpage_url}
-                        rel="noreferrer"
-                        target="_blank"
-                    >
-                        {showIsMusicModal?.webpage_title}
-                    </a>
-                </p>
-                <p
-                    style={{
-                        maxHeight: '300px',
-                        overflowY: 'scroll',
-                        whiteSpace: 'pre-line',
-                    }}
-                >
-                    {showIsMusicModal?.webpage_description}
-                </p>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button
-                    variant="secondary"
-                    onClick={handleCloseIsMusicModal}
-                >
-                    Fechar
-                </Button>
-                <Button
-                    variant={
-                        showIsMusicModal.isMusic ? 'success' : 'danger'
-                    }
-                    onClick={() =>
-                        setIsMusicFlag(
-                            showIsMusicModal.id,
-                            showIsMusicModal.isMusic,
-                        )
-                    }
-                >
-                    {showIsMusicModal.isMusic ? 'Marquei' : 'Não é música'}
-                </Button>
-            </Modal.Footer>
-        </Modal>
-    );
-
     return (
         <Container>
             <Row>
@@ -619,7 +506,7 @@ export const App = () => {
             </Row>
             <Row>
                 <Col>
-                    <Button onClick={() => getSuggestions()}>
+                    <Button onClick={() => newGetSuggestions()}>
                         Ver sugestões
                     </Button>
                 </Col>
@@ -707,22 +594,38 @@ export const App = () => {
                                             </Button>
                                         </OverlayTrigger>
                                     </ButtonGroup>
-                                    {showIsMusicModal && setIsMusicModal}
+                                    <SetIsMusicModal
+                                        showIsMusicModal={showIsMusicModal}
+                                        handleCloseIsMusicModal={
+                                            handleCloseIsMusicModal
+                                        }
+                                        setIsMusicFlag={setIsMusicFlag}
+                                    />
                                 </td>
                                 <td>{row.message}</td>
                                 <td className="webpage_title">
                                     <div>
-                                        {renderWithMarks(
-                                            row,
-                                            'webpage_title',
+                                        {row.parsed_title?.map(
+                                            (ex, id) => (
+                                                <ParsedBlock
+                                                    key={id}
+                                                    type={ex.type}
+                                                    content={ex.content}
+                                                />
+                                            ),
                                         )}
                                     </div>
                                 </td>
                                 <td className="webpage_description">
                                     <div>
-                                        {renderWithMarks(
-                                            row,
-                                            'webpage_description',
+                                        {row.parsed_description?.map(
+                                            (ex, id) => (
+                                                <ParsedBlock
+                                                    key={id}
+                                                    type={ex.type}
+                                                    content={ex.content}
+                                                />
+                                            ),
                                         )}
                                     </div>
                                 </td>
