@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, ButtonGroup } from 'react-bootstrap';
 import { Col, Container } from 'react-bootstrap';
-import Form from 'react-bootstrap/Form';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
-import Popover from 'react-bootstrap/Popover';
 import Row from 'react-bootstrap/Row';
 import { Table, Tooltip } from 'react-bootstrap';
 
@@ -12,6 +10,7 @@ import ch00nky from './ch00nky.gif';
 import escapeRegExp from './escapeRegex';
 import ParsedBlock from './components/parsedBlock';
 import SetIsMusicModal from './components/isMusicModal';
+import SelectedArtistPopover from './components/selectedArtistPopOver';
 import {
     read_telegram_messages,
     sync_telegram_messages,
@@ -66,10 +65,42 @@ export const App = () => {
         setShowIsMusicModal(false);
     };
 
+    const createStructFromMatches = (matches, content) => {
+        const struct = [];
+        let lastEnd = 0;
+        matches.forEach(match => {
+            if (match.start > lastEnd) {
+                struct.push({
+                    start: lastEnd,
+                    end: match.start,
+                    content: content.substring(lastEnd, match.start),
+                    type: 'string',
+                });
+            }
+            struct.push({
+                start: match.start,
+                end: match.end,
+                content: content.substring(match.start, match.end),
+                type: 'mark',
+            });
+            lastEnd = match.end;
+        });
+        if (lastEnd < content.length) {
+            struct.push({
+                start: lastEnd,
+                end: content.length,
+                content: content.substring(lastEnd, content.length),
+                type: 'string',
+            });
+        }
+        return struct;
+    };
+
     const createStructFromSuggestions = (suggestions, content) => {
         const struct = [];
         let lastEnd = 0;
         suggestions.forEach(suggestion => {
+            console.log(suggestion);
             if (suggestion[0] > lastEnd) {
                 struct.push({
                     start: lastEnd,
@@ -229,32 +260,6 @@ export const App = () => {
         }
     };
 
-    const selectedArtistPopover = (
-        <Popover id="popover-basic">
-            <Popover.Header as="h3">Confirme o artista</Popover.Header>
-            <Popover.Body>
-                <div>
-                    <strong>{popOver.selectedText}</strong>
-                </div>
-                <hr />
-                <Row>
-                    <Form>
-                        <Button
-                            onClick={() =>
-                                confirmArtist(popOver.selectedText)
-                            }
-                            variant="primary"
-                            size="sm"
-                            disabled={artist.loading}
-                        >
-                            Confirmar
-                        </Button>
-                    </Form>
-                </Row>
-            </Popover.Body>
-        </Popover>
-    );
-
     const createMarkStructure = content => {
         if (typeof content === 'string') {
             return {
@@ -374,7 +379,13 @@ export const App = () => {
                         <OverlayTrigger
                             show={popOver.id !== null}
                             placement="right"
-                            overlay={selectedArtistPopover}
+                            overlay={
+                                <SelectedArtistPopover
+                                    popOver={popOver}
+                                    loading={artist.loading}
+                                    confirmArtist={confirmArtist}
+                                />
+                            }
                         >
                             <mark>{popOver.selectedText}</mark>
                         </OverlayTrigger>,
@@ -404,11 +415,13 @@ export const App = () => {
         return text;
     };
 
-    const handleMouseUp = async e => {
+    const handleMouseUp = (e, row_id) => {
         const windowSelection = window.getSelection();
         const selectedStr = windowSelection.toString();
-        const currentText = findById(selectedRow);
+        const currentRow = findById(row_id);
+        if (!currentRow) return;
 
+        // TODO: we should be able to do this without getElementById
         // check if target is inside the popover
         const popoverElement = document.getElementById('popover-basic');
         if (popoverElement && !popoverElement.contains(e.target)) {
@@ -416,46 +429,58 @@ export const App = () => {
             setPopOver({ id: null });
         }
 
-        if (selectedStr && selectedStr.length > 0 && currentText) {
+        if (selectedStr && selectedStr.length > 0 && currentRow) {
             // get element wrapping the selection
             const selectedElement =
                 windowSelection.focusNode.parentElement;
 
             const elClassName = selectedElement.parentElement.className;
 
-            // only allow selection inside webpage_description and webpage_title
-            if (
-                !['webpage_description', 'webpage_title'].includes(
-                    elClassName,
-                )
-            ) {
-                return;
-            }
-
             const popOverInTitle = elClassName === 'webpage_title';
 
             setArtist({ ...artist });
-            let index;
-            if (popOverInTitle) {
-                index = currentText.webpage_title.indexOf(selectedStr);
-                currentText.selectedText = selectedStr;
-            } else {
-                index =
-                    currentText.webpage_description.indexOf(selectedStr);
-                currentText.selectedText = selectedStr;
+
+            const index = popOverInTitle
+                ? currentRow.webpage_title.indexOf(selectedStr)
+                : currentRow.webpage_description.indexOf(selectedStr);
+            const content = popOverInTitle
+                ? currentRow.webpage_title
+                : currentRow.webpage_description;
+
+            const selection = [];
+            const regex = new RegExp(escapeRegExp(selectedStr), 'gi');
+
+            let matchArr = null;
+            while (null != (matchArr = regex.exec(content))) {
+                console.log(matchArr.index, regex.lastIndex);
+                selection.push({
+                    start: matchArr.index,
+                    end: regex.lastIndex,
+                    content: selectedStr,
+                    type: 'mark',
+                });
             }
+
+            const newStructure = createStructFromMatches(
+                selection,
+                content,
+            );
+
+            currentRow[
+                popOverInTitle ? 'parsed_title' : 'parsed_description'
+            ] = newStructure;
 
             // show popover
             setPopOver({
-                ...currentText,
+                ...currentRow,
                 inTitle: popOverInTitle,
                 textIndex: index,
             });
-
+            console.log(newStructure);
             // update text with new currentText
             setRows(
                 rows.map(item =>
-                    item.id === currentText.id ? currentText : item,
+                    item.id === currentRow.id ? currentRow : item,
                 ),
             );
         }
@@ -527,7 +552,7 @@ export const App = () => {
                                 id={`row-${row.id}`}
                                 className="float-anchor"
                                 key={row.id}
-                                onMouseUp={handleMouseUp}
+                                onMouseUp={e => handleMouseUp(e, row.id)}
                                 onMouseEnter={() => {
                                     setSelectedRow(row.id);
                                 }} /* onMouseLeave={() => { setSelectedRow(null) }} */
