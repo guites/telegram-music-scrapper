@@ -3,8 +3,8 @@
 }
 
 .webpage_description div {
-    height:100px;
-    overflow-y: hidden;
+    height: 125px;
+    overflow-y: scroll;
 }
 
 .webpage_description.expanded div {
@@ -29,4 +29,24 @@
 
 .nlp-suggestion {
     background-color: #ffcdcd;
+}
+
+table {
+    table-layout: fixed;
+}
+table th,
+table td {
+    overflow: hidden;
+}
+
+table th:nth-child(1) {
+    width: 10%;
+}
+
+table th:nth-child(2) {
+    width: 20%;
+}
+
+table th:nth-child(3) {
+    width: 30%;
 }
