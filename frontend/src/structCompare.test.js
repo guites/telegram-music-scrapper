@@ -388,3 +388,5 @@ test("Can go from string to a mark between strings", () => {
     const result = structCompare(prevIndexes, newIndexes);
     expect(result).toEqual(expected);
 });
+
+export default TestComp;
