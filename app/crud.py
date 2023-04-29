@@ -179,3 +179,38 @@ class TelegramCrud:
         self.db.add(telegram_message)
         self.db.commit()
         return telegram_message
+
+    def read_telegram_message_artists(self):
+        # get the telegram_message_artists field from the TelegramMessage table
+        telegram_messages_with_artists = (
+            self.db.query(TelegramMessage)
+            .filter(TelegramMessage.telegram_message_artists != None)
+            .all()
+        )
+
+        artists = []
+
+        def get_artist_index(artist_name, artists_list):
+            for artist in artists_list:
+                if artist["name"] == artist_name:
+                    return artists.index(artist)
+            return None
+        
+        for telegram_message_artist in telegram_messages_with_artists:
+
+            for artist in telegram_message_artist.telegram_message_artists:
+                artist_name = artist.artist_name.title()
+                artist_index = get_artist_index(artist_name, artists)
+
+                if artist_index is None:
+                    artists.append({
+                        "name": artist_name,
+                        "telegram_message_ids": [artist.telegram_message_id]
+                    })
+                
+                if artist_index is not None and artist.telegram_message_id not in artists[artist_index]["telegram_message_ids"]:
+                    artists[artist_index]["telegram_message_ids"].append(artist.telegram_message_id)
+                
+
+        return artists
+        

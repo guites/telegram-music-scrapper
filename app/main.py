@@ -94,6 +94,15 @@ async def read_telegram_messages(
     return telegram_messages
 
 
+@app.get("/telegram_messages/artists")
+async def read_telegram_message_artists(
+    db: Session = Depends(get_db)
+):
+    telegram_crud = TelegramCrud(db)
+    telegram_message_artists = telegram_crud.read_telegram_message_artists()
+    return telegram_message_artists
+
+
 @app.get("/telegram_messages/{telegram_message_id}")
 async def read_telegram_message(
     telegram_message_id: int, db: Session = Depends(get_db)

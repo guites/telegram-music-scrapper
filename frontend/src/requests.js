@@ -1,5 +1,9 @@
 const API_URL = 'http://localhost:8000';
 
+const read_registered_artists = async () => {
+    
+};
+
 const read_telegram_messages = async (offset_id) => {
     const url = new URL(`${API_URL}/telegram_messages/`)
 
