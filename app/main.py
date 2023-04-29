@@ -14,7 +14,6 @@ import models
 
 from crud import TelegramCrud, TelegramSessionCrud
 from database import SessionLocal, engine
-from RapidFuzz import RapidFuzz
 from schemas import TelegramMessageResponse, TelegramMessageArtistCreate, TelegramMessageArtistResponse
 from TelegramApi import TelegramApi
 from utils import check_artist_names_file
