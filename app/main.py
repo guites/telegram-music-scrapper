@@ -4,7 +4,6 @@ import spacy
 import time
 import uvicorn
 
-from dask import dataframe as dd
 from fastapi import Depends, HTTPException, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
@@ -16,7 +15,6 @@ import models
 
 from crud import TelegramCrud, TelegramSessionCrud
 from database import SessionLocal, engine
-from RapidFuzz import RapidFuzz
 from schemas import TelegramMessageResponse, TelegramMessageArtistCreate, TelegramMessageArtistResponse
 from TelegramApi import TelegramApi
 from utils import check_artist_names_file
