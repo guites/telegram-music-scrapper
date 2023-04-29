@@ -31,7 +31,7 @@ Você vai precisar de um arquivo `.env` com as seguintes propriedades:
     TELEGRAM_APP_TITLE=MyTelegramApp
     TELEGRAM_SHORT_TITLE=myshorttitle
     TELEGRAM_CHANNEL_ID=123445667
-    ARTISTS_FILE_PATH=/path/to/artists-names.txt
+    DATABASE_PATH=/path/to/your/database/file.sql
 
 Para conseguir os valores de `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_APP_TITLE` e `TELEGRAM_SHORT_TITLE`, você precisa criar um aplicativo no telegram. Você pode fazer isso seguinte [estas instruções](https://core.telegram.org/api/obtaining_api_id).
 
