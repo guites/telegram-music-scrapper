@@ -10,7 +10,6 @@ import ch00nky from './ch00nky.gif';
 import escapeRegExp from './escapeRegExp';
 import ParsedBlock from './components/parsedBlock';
 import SetIsMusicModal from './components/isMusicModal';
-import SelectedArtistPopover from './components/selectedArtistPopOver';
 import {
     read_telegram_messages,
     sync_telegram_messages,
@@ -47,6 +46,30 @@ export const App = () => {
             isMusic: isMusic,
         });
     };
+
+    const formatRow = row => {
+        const parsedTitle = createStructFromSuggestions(
+            [],
+            row.webpage_title,
+        );
+        const parsedDescription = row.webpage_description ? createStructFromSuggestions(
+            [],
+            row.webpage_description,
+        ) : null;
+
+        return {
+            id: row.id,
+            message: row.message,
+            site_name: row.site_name,
+            webpage_url: row.webpage_url,
+            webpage_description: row.webpage_description ? row.webpage_description.normalize('NFC') : null,
+            webpage_title: row.webpage_title.normalize('NFC'),
+            parsed_title: parsedTitle,
+            parsed_description: parsedDescription,
+            selectedText: null,
+        }
+    }
+
 
     const handleCloseIsMusicModal = () => setShowIsMusicModal(false);
 
@@ -118,23 +141,7 @@ export const App = () => {
         const telegram_messages = await read_telegram_messages(null);
         const initial_text = [];
         telegram_messages.forEach((row, _) => {
-            initial_text.push({
-                id: row.id,
-                message: row.message,
-                site_name: row.site_name,
-                webpage_url: row.webpage_url,
-                webpage_description: row.webpage_description,
-                webpage_title: row.webpage_title,
-                parsed_title: createStructFromSuggestions(
-                    [],
-                    row.webpage_title,
-                ),
-                parsed_description: createStructFromSuggestions(
-                    [],
-                    row.webpage_description,
-                ),
-                selectedText: null,
-            });
+            initial_text.push(formatRow(row));
         });
         setRows(initial_text);
     }, []);
@@ -156,31 +163,15 @@ export const App = () => {
         const telegram_messages = await read_telegram_messages(
             biggest_id_item.id,
         );
-        // make a copy of the text array
-        const new_text = [...rows];
+        // make a copy of the rows array
+        const new_rows = [...rows];
         // add new messages to the copy
         telegram_messages.forEach((row, _) => {
             if (row.id > biggest_id_item.id) {
-                new_text.push({
-                    id: row.id,
-                    message: row.message,
-                    site_name: row.site_name,
-                    webpage_url: row.webpage_url,
-                    webpage_description: row.webpage_description,
-                    webpage_title: row.webpage_title,
-                    parsed_title: createStructFromSuggestions(
-                        [],
-                        row.webpage_title,
-                    ),
-                    parsed_description: createStructFromSuggestions(
-                        [],
-                        row.webpage_description,
-                    ),
-                    selectedText: null,
-                });
+                new_rows.push(formatRow(row));
             }
         });
-        setRows(new_text);
+        setRows(new_rows);
         setGettingMoreMessages(false);
     };
 
@@ -210,161 +201,6 @@ export const App = () => {
             // setText(text.filter((item) => item.id !== currentText.id));
             setPopOver({ id: null });
         }
-    };
-
-    const createMarkStructure = content => {
-        if (typeof content === 'string') {
-            return {
-                content: content,
-                structure: [
-                    {
-                        start: 0,
-                        end: content.length,
-                        content: content,
-                        type: 'string',
-                    },
-                ],
-            };
-        }
-
-        let stringContent = '',
-            children = null;
-        const indexes = [];
-
-        for (const [i, el] of content.entries()) {
-            if (typeof el === 'string') {
-                indexes.push({
-                    start: i === 0 ? 0 : indexes[i - 1].end,
-                    end:
-                        i === 0
-                            ? el.length
-                            : indexes[i - 1].end + el.length,
-                    content: el,
-                    type: 'string',
-                });
-                stringContent = stringContent + el;
-                continue;
-            }
-
-            children = el.props.children;
-            if (
-                typeof children !== 'string' &&
-                children.hasOwnProperty('props')
-            ) {
-                children = children.props.children;
-            }
-            indexes.push({
-                start: i === 0 ? 0 : indexes[i - 1].end,
-                end:
-                    i === 0
-                        ? children.length
-                        : indexes[i - 1].end + children.length,
-                content: children,
-                type: 'mark',
-            });
-            stringContent = stringContent + el.props.children;
-        }
-
-        return {
-            content: stringContent,
-            structure: indexes,
-        };
-    };
-
-    const renderWithMarks = (row, type) => {
-        if (!row) return;
-
-        const id = row.id;
-        const text = row[type];
-
-        if (!text) return;
-
-        const indexPairs = [];
-        let matchArr = null;
-
-        if (id === popOver.id) {
-            // get the raw text and the indexes of existing marks, in case the text has been
-            // processed by another function
-            const { content: stringText, structure: prevIndexes } =
-                createMarkStructure(text);
-
-            // if (type === 'webpage_title') {
-            //     console.log('prevIndexes', prevIndexes);
-            //     console.log('stringText', stringText);
-            // }
-
-            const regex = new RegExp(
-                escapeRegExp(popOver.selectedText),
-                'gi',
-            );
-            matchArr = null;
-            while (null != (matchArr = regex.exec(stringText))) {
-                indexPairs.push([matchArr.index, regex.lastIndex]);
-            }
-
-            if (indexPairs.length === 0) {
-                return <div>{text}</div>;
-            }
-
-            const renderedText = [];
-            // push the text before the first match, if there is any
-            if (indexPairs[0][0] > 0) {
-                renderedText.push(
-                    stringText.substring(0, indexPairs[0][0]),
-                );
-            }
-            for (const [i, pair] of indexPairs.entries()) {
-                // push the text between the latest match and the beggining of the current match
-
-                if (i > 0) {
-                    renderedText.push(
-                        stringText.substring(
-                            indexPairs[i - 1][1],
-                            pair[0],
-                        ),
-                    );
-                }
-
-                // if the index matches the index of the selected text, substitute with the popover using the overlay trigger
-                if (pair[0] === popOver.textIndex) {
-                    renderedText.push(
-                        <OverlayTrigger
-                            show={popOver.id !== null}
-                            placement="right"
-                            overlay={
-                                <SelectedArtistPopover
-                                    popOver={popOver}
-                                    loading={artist.loading}
-                                    confirmArtist={confirmArtist}
-                                />
-                            }
-                        >
-                            <mark>{popOver.selectedText}</mark>
-                        </OverlayTrigger>,
-                    );
-                } else {
-                    renderedText.push(
-                        <mark>
-                            {stringText.substring(pair[0], pair[1])}
-                        </mark>,
-                    );
-                }
-            }
-            // push the text after the last match
-            renderedText.push(
-                stringText.substring(indexPairs[indexPairs.length - 1][1]),
-            );
-
-            const { structure: newIndexes } =
-                createMarkStructure(renderedText);
-
-            // if (type === 'webpage_title') {
-            //     console.log('newIndexes', newIndexes);
-            // }
-            return renderedText;
-        }
-
-        return text;
     };
 
     const handleMouseUp = (e, row_id) => {
@@ -408,12 +244,6 @@ export const App = () => {
             const resultingTitle = structCompare(
                 currentRow.parsed_title,
                 titleParsedSelection,
-            );
-
-            console.log(
-                currentRow.parsed_title,
-                titleParsedSelection,
-                resultingTitle,
             );
 
             currentRow.parsed_title = resultingTitle;
@@ -521,7 +351,7 @@ export const App = () => {
                                 onMouseUp={e => handleMouseUp(e, row.id)}
                                 onMouseEnter={() => {
                                     setSelectedRow(row.id);
-                                }} /* onMouseLeave={() => { setSelectedRow(null) }} */
+                                }}
                             >
                                 <td>
                                     {row.id}
@@ -623,7 +453,6 @@ export const App = () => {
                             </tr>
                         ))}
                     </tbody>
-                    {/* expected.map((ex) => {<TestComp type={ex.type}>{ex.content}</TestComp>) */}
                 </Table>
             </Row>
             <ButtonGroup>
