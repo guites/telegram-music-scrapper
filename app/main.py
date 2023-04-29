@@ -237,6 +237,25 @@ def spacy_inference(
     return [(ent.text, ent.label_) for ent in doc.ents]
     
 
+@app.get('/artists/positions')
+def get_artists_positions():
+    return [
+			{
+				"position": [51.505, -0.09],
+				"name": "Sepultura",
+			},
+			{
+				"position": [51.405, -0.09],
+				"name": "Nirvana",
+			},
+			{
+				"position": [51.455, -0.14],
+				"name": "Bring me the horizon",
+			},
+			{
+				"position": [51.545, -0.09],
+				"name": "Raimundos",
+			}]
     
 
 def main():

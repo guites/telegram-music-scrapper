@@ -2,6 +2,7 @@ import { Header } from './components/Header'
 import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
 import { useEffect, useState, useRef } from 'react';
+import { read_artists_positions } from './requests';
 
 import { Icon } from 'leaflet';
 import L from 'leaflet'
@@ -14,11 +15,9 @@ export const Maps = () => {
 	const [data, setData] = useState("valor inicial");
 	const myIcon = new Icon({ iconUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png", iconSize: [26, 42] });
 	const [markers, setMarkers] = useState([])
-
 	const [mapRef, setMapRef] = useState(null);
 
 	useEffect(() => {
-		console.log(mapRef);
 		if (markers.length > 0 && mapRef.current !== null) {
 			// Obter as coordenadas dos marcadores
 			const coordinates = markers.map((marker) => marker.position);
@@ -28,26 +27,18 @@ export const Maps = () => {
 		}
 	}, [markers]);
 
-	const changeMarkers = () => {
-		setMarkers([
-			{
-				position: [51.505, -0.09],
-				name: "Marker 1",
-			},
-			{
-				position: [51.405, -0.09],
-				name: "Marker 2",
-			},
-			{
-				position: [51.455, -0.14],
-				name: "Marker 3",
-			},
-			{
-				position: [51.545, -0.09],
-				name: "Marker 4",
-			}])
-	}
-
+	const changeMarkers = async () => {
+		const new_markers = [...markers];
+		const artistsPositions = await read_artists_positions();
+		artistsPositions.forEach((artist) => {
+			const alreadyExists = new_markers.some((marker) => marker.name === artist.name);
+			if (!alreadyExists) {
+				new_markers.push(artist);
+			}
+		});
+		setMarkers(new_markers);
+		console.log(new_markers);
+	};
 	return (
 		<>
 			<Header />
