@@ -3,7 +3,6 @@ import re
 import time
 import uvicorn
 
-from dask import dataframe as dd
 from fastapi import Depends, HTTPException, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
