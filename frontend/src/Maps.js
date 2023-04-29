@@ -1,3 +1,4 @@
+import { Header } from './components/Header'
 import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
 import { useEffect, useState } from 'react';
@@ -13,6 +14,7 @@ export const Maps = () => {
 	const myIcon = new Icon({ iconUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png", iconSize: [26, 42] })
 	return (
 		<>
+			<Header />
 			<Container>Mapas! {data} </Container>
 			<Button onClick={() => setData("outro valor")}>
 				Clique aqui
