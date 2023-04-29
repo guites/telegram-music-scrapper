@@ -7,7 +7,7 @@ import { Table, Tooltip } from 'react-bootstrap';
 
 import './App.css';
 import ch00nky from './ch00nky.gif';
-import escapeRegExp from './escapeRegex';
+import escapeRegExp from './escapeRegExp';
 import ParsedBlock from './components/parsedBlock';
 import SetIsMusicModal from './components/isMusicModal';
 import SelectedArtistPopover from './components/selectedArtistPopOver';
@@ -15,6 +15,10 @@ import {
     read_telegram_messages,
     sync_telegram_messages,
 } from './requests';
+import structCompare from './structCompare';
+import createStructFromMatches from './createStructFromMatches';
+import createStructFromSuggestions from './createStructFromSuggestions';
+import getMatches from './getMatches';
 
 export const App = () => {
     const [selectedRow, setSelectedRow] = useState(null);
@@ -38,7 +42,6 @@ export const App = () => {
 
     const [showIsMusicModal, setShowIsMusicModal] = useState(false);
     const handleShowIsMusicModal = isMusic => {
-        console.log(isMusic, selectedRow, findById(selectedRow));
         setShowIsMusicModal({
             ...findById(selectedRow),
             isMusic: isMusic,
@@ -63,69 +66,6 @@ export const App = () => {
         setRows(rows.filter(item => item.id !== telegram_message_id));
         setPopOver({ id: null });
         setShowIsMusicModal(false);
-    };
-
-    const createStructFromMatches = (matches, content) => {
-        const struct = [];
-        let lastEnd = 0;
-        matches.forEach(match => {
-            if (match.start > lastEnd) {
-                struct.push({
-                    start: lastEnd,
-                    end: match.start,
-                    content: content.substring(lastEnd, match.start),
-                    type: 'string',
-                });
-            }
-            struct.push({
-                start: match.start,
-                end: match.end,
-                content: content.substring(match.start, match.end),
-                type: 'mark',
-            });
-            lastEnd = match.end;
-        });
-        if (lastEnd < content.length) {
-            struct.push({
-                start: lastEnd,
-                end: content.length,
-                content: content.substring(lastEnd, content.length),
-                type: 'string',
-            });
-        }
-        return struct;
-    };
-
-    const createStructFromSuggestions = (suggestions, content) => {
-        const struct = [];
-        let lastEnd = 0;
-        suggestions.forEach(suggestion => {
-            console.log(suggestion);
-            if (suggestion[0] > lastEnd) {
-                struct.push({
-                    start: lastEnd,
-                    end: suggestion[0],
-                    content: content.substring(lastEnd, suggestion[0]),
-                    type: 'string',
-                });
-            }
-            struct.push({
-                start: suggestion[0],
-                end: suggestion[1] - 1, // -1 because the on the api the end is exclusive, i.e. up to but not including the end index
-                content: content.substring(suggestion[0], suggestion[1]),
-                type: 'suggestion',
-            });
-            lastEnd = suggestion[1];
-        });
-        if (lastEnd < content.length) {
-            struct.push({
-                start: lastEnd,
-                end: content.length,
-                content: content.substring(lastEnd, content.length),
-                type: 'string',
-            });
-        }
-        return struct;
     };
 
     const newGetSuggestions = async () => {
@@ -154,10 +94,22 @@ export const App = () => {
             const title_suggestions = row.suggestions['webpage_title'];
 
             const new_row = new_rows.findIndex(item => item.id === row.id);
-            new_rows[new_row].parsed_title = createStructFromSuggestions(
+            const suggestionsStruct = createStructFromSuggestions(
                 title_suggestions,
                 row.webpage_title,
             );
+            const resultingStruct = structCompare(
+                new_rows[new_row].parsed_title,
+                suggestionsStruct,
+            );
+
+            // console.log(
+            //     new_rows[new_row].parsed_title,
+            //     suggestionsStruct,
+            //     resultingStruct,
+            // );
+
+            new_rows[new_row].parsed_title = resultingStruct;
         });
         setRows(new_rows);
     };
@@ -429,7 +381,7 @@ export const App = () => {
             setPopOver({ id: null });
         }
 
-        if (selectedStr && selectedStr.length > 0 && currentRow) {
+        if (selectedStr && selectedStr.length > 0) {
             // get element wrapping the selection
             const selectedElement =
                 windowSelection.focusNode.parentElement;
@@ -440,43 +392,57 @@ export const App = () => {
 
             setArtist({ ...artist });
 
-            const index = popOverInTitle
-                ? currentRow.webpage_title.indexOf(selectedStr)
-                : currentRow.webpage_description.indexOf(selectedStr);
-            const content = popOverInTitle
-                ? currentRow.webpage_title
-                : currentRow.webpage_description;
-
-            const selection = [];
             const regex = new RegExp(escapeRegExp(selectedStr), 'gi');
 
-            let matchArr = null;
-            while (null != (matchArr = regex.exec(content))) {
-                console.log(matchArr.index, regex.lastIndex);
-                selection.push({
-                    start: matchArr.index,
-                    end: regex.lastIndex,
-                    content: selectedStr,
-                    type: 'mark',
-                });
-            }
-
-            const newStructure = createStructFromMatches(
-                selection,
-                content,
+            const titleSelection = getMatches(
+                currentRow.webpage_title,
+                regex,
+                selectedStr,
             );
 
-            currentRow[
-                popOverInTitle ? 'parsed_title' : 'parsed_description'
-            ] = newStructure;
+            const titleParsedSelection = createStructFromMatches(
+                titleSelection,
+                currentRow.webpage_title,
+            );
+
+            const resultingTitle = structCompare(
+                currentRow.parsed_title,
+                titleParsedSelection,
+            );
+
+            console.log(
+                currentRow.parsed_title,
+                titleParsedSelection,
+                resultingTitle,
+            );
+
+            currentRow.parsed_title = resultingTitle;
+
+            const descriptionSelection = getMatches(
+                currentRow.webpage_description,
+                regex,
+                selectedStr,
+            );
+
+            const descriptionParsedSelection = createStructFromMatches(
+                descriptionSelection,
+                currentRow.webpage_description,
+            );
+
+            const resultingDescription = structCompare(
+                currentRow.parsed_description,
+                descriptionParsedSelection,
+            );
+
+            currentRow.parsed_description = resultingDescription;
 
             // show popover
-            setPopOver({
-                ...currentRow,
-                inTitle: popOverInTitle,
-                textIndex: index,
-            });
-            console.log(newStructure);
+            // setPopOver({
+            //     ...currentRow,
+            //     inTitle: popOverInTitle,
+            //     textIndex: index,
+            // });
+
             // update text with new currentText
             setRows(
                 rows.map(item =>

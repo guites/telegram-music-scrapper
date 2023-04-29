@@ -9,7 +9,7 @@ test('Renders correct block from given object', () => {
                 content: 'CRIOLO',
                 type: 'suggestion',
             },
-            expected: <mark className="suggestion">CRIOLO</mark>,
+            expected: <mark className="nlp-suggestion">CRIOLO</mark>,
         },
         {
             block: {
@@ -43,7 +43,10 @@ test('Renders correct block from given object', () => {
     for (let i = 0; i < indexes.length; i++) {
         const block = indexes[i]['block'];
         const expected = indexes[i]['expected'];
-        const parsedBlock = ParsedBlock(block.type, block.content);
+        const parsedBlock = ParsedBlock({
+            type: block.type,
+            content: block.content,
+        });
         expect(parsedBlock).toEqual(expected);
     }
 });

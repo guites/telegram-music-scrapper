@@ -13,6 +13,9 @@ function structCompare(prevIndexes, newIndexes) {
     // if a string overlaps with a string, merge the two strings
     // TODO: what if a suggestion overlaps with a suggestion?
 
+    // if a string overlaps with a string, merge the two strings without repeating the content
+    // if a string overlaps with a mark, keep the mark and create a new string with the remaining content
+    // if a string overlaps with a suggestion, keep the suggestion and create a new string with the remaining content
 
     let index, nextIndex, newString, newStringContent;
 
@@ -23,23 +26,59 @@ function structCompare(prevIndexes, newIndexes) {
             // no overlap
             continue;
         }
-        // console.log(`overlap between ${index.type} and ${nextIndex.type}`);
         if (index.type === 'string') {
             if (nextIndex.type === 'mark') {
                 // create a new string with the remaining content, if any
                 if (index.end > nextIndex.end) {
+                    if (index.content.startsWith(nextIndex.content)) {
+                        // keep the mark and create a new string with the remaining content, if any
+                        newString = {
+                            start: nextIndex.end + 1,
+                            end: index.end,
+                            content: index.content.substring(
+                                index.content.indexOf(nextIndex.content) +
+                                    nextIndex.content.length,
+                                index.content.length,
+                            ),
+                            type: 'string',
+                        };
+                        // remove the old string and insert the new one
+                        mergedIndexes.splice(i, 1, newString);
+                        continue;
+                    }
                     newString = {
                         start: index.start,
-                        end: nextIndex.start -1,
-                        content: index.content.substring(0, index.content.indexOf(nextIndex.content)),
-                        type: 'string'
-                    }
+                        end: nextIndex.start - 1,
+                        content: index.content.substring(
+                            0,
+                            index.content.indexOf(nextIndex.content),
+                        ),
+                        type: 'string',
+                    };
                     // remove the old string and insert the new one
                     mergedIndexes.splice(i, 1, newString);
-                } else {
-                    // remove the mark
-                    mergedIndexes.splice(i + 1, 1);
+                    continue;
                 }
+                if (index.content.endsWith(nextIndex.content)) {
+                    // keep the mark and create a new string with the remaining content, if any
+                    newString = {
+                        start: index.start,
+                        end: nextIndex.start - 1,
+                        content: index.content.substring(
+                            0,
+                            index.content.indexOf(nextIndex.content),
+                        ),
+                        type: 'string',
+                    };
+                    // remove the old string and insert the new one
+                    mergedIndexes.splice(i, 1, newString);
+                    continue;
+                }
+
+                // remove the string
+                mergedIndexes.splice(i, 1);
+                i = i - 1; // splicing seems to make the for loop skip the next index
+                continue;
             }
             if (nextIndex.type === 'string') {
                 // concatenate the two strings without repeating the content
@@ -56,12 +95,35 @@ function structCompare(prevIndexes, newIndexes) {
                     start: index.start,
                     end: nextIndex.end,
                     content: newStringContent,
-                    type: 'string'
-                }
+                    type: 'string',
+                };
 
                 // remove the old string and insert the new one
                 mergedIndexes.splice(i, 2, newString);
-                i = i -1; // splicing seems to make the for loop skip the next index
+                i = i - 1; // splicing seems to make the for loop skip the next index
+                continue;
+            }
+            if (nextIndex.type === 'suggestion') {
+                // keep the suggestion and create a new string with the remaining content, if any
+                if (index.end > nextIndex.end) {
+                    newString = {
+                        start: index.start,
+                        end: nextIndex.start - 1,
+                        content: index.content.substring(
+                            0,
+                            index.content.indexOf(nextIndex.content),
+                        ),
+                        type: 'string',
+                    };
+                    // remove the old string and insert the new one
+                    mergedIndexes.splice(i, 1, newString);
+                    continue;
+                } else {
+                    // remove the string
+                    mergedIndexes.splice(i, 1);
+                    i = i - 1; // splicing seems to make the for loop skip the next index
+                    continue;
+                }
             }
         }
         if (index.type === 'mark') {
@@ -71,13 +133,17 @@ function structCompare(prevIndexes, newIndexes) {
                     newString = {
                         start: index.end + 1,
                         end: nextIndex.end,
-                        content: nextIndex.content.slice(1 + index.end - nextIndex.start),
-                        type: 'string'
-                    }
+                        content: nextIndex.content.slice(
+                            1 + index.end - nextIndex.start,
+                        ),
+                        type: 'string',
+                    };
                     mergedIndexes.splice(i + 1, 1, newString);
+                    continue;
                 } else {
                     // remove the suggestion
                     mergedIndexes.splice(i + 1, 1);
+                    continue;
                 }
             }
             if (nextIndex.type === 'string') {
@@ -86,14 +152,18 @@ function structCompare(prevIndexes, newIndexes) {
                     newString = {
                         start: index.end + 1,
                         end: nextIndex.end,
-                        content: nextIndex.content.slice(1 + index.end - nextIndex.start),
-                        type: 'string'
-                    }
+                        content: nextIndex.content.slice(
+                            1 + index.end - nextIndex.start,
+                        ),
+                        type: 'string',
+                    };
                     // remove the old string and insert the new one
                     mergedIndexes.splice(i + 1, 1, newString);
+                    continue;
                 } else {
                     // remove the string
                     mergedIndexes.splice(i + 1, 1);
+                    continue;
                 }
             }
             continue;
@@ -105,15 +175,19 @@ function structCompare(prevIndexes, newIndexes) {
                     newString = {
                         start: nextIndex.end,
                         end: index.end,
-                        content: index.content.slice(index.end - nextIndex.end),
-                        type: 'string'
-                    }
+                        content: index.content.slice(
+                            index.end - nextIndex.end,
+                        ),
+                        type: 'string',
+                    };
                     // remove the old suggestion and insert the new string
                     mergedIndexes.splice(i, 1, newString);
+                    continue;
                 } else {
                     // remove the suggestion
                     mergedIndexes.splice(i, 1);
-                    i = i -1; // splicing seems to make the for loop skip the next index
+                    i = i - 1; // splicing seems to make the for loop skip the next index
+                    continue;
                 }
             }
             if (nextIndex.type === 'string') {
@@ -122,11 +196,14 @@ function structCompare(prevIndexes, newIndexes) {
                     newString = {
                         start: index.end + 1,
                         end: nextIndex.end,
-                        content: nextIndex.content.slice(1 + index.end - nextIndex.start),
-                        type: 'string'
-                    }
+                        content: nextIndex.content.slice(
+                            1 + index.end - nextIndex.start,
+                        ),
+                        type: 'string',
+                    };
                     // remove the old string and insert the new one
                     mergedIndexes.splice(i + 1, 1, newString);
+                    continue;
                 }
             }
         }
@@ -136,5 +213,3 @@ function structCompare(prevIndexes, newIndexes) {
 }
 
 export default structCompare;
-
-
