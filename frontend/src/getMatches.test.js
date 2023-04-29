@@ -43,3 +43,33 @@ test('Regression test to prevent bug where selecting a second mark at the end of
 
     expect(matches).toEqual(expectedMatches);
 });
+
+test('Matches are generated correctly for string with tildes', () => {
+    const selectedStr = 'Vietnã';
+    const content = 'Vietnã - Front | ft. Nocivo Shomon | Prod. Vietnã';
+    
+    // normalize two character strings into one
+    // source: https://mathiasbynens.be/notes/javascript-unicode
+    const content2 = 'Vietnã - Front | ft. Nocivo Shomon | Prod. Vietnã'.normalize('NFC');
+    expect(content).toEqual(content2);
+    
+    const regex = new RegExp(escapeRegExp(selectedStr), 'gi');
+    const matches = getMatches(content, regex, selectedStr);
+
+    const expectedMatches = [
+        {
+            start: 0,
+            end: 5,
+            content: 'Vietnã',
+            type: 'mark',
+        },
+        {
+            start: 43,
+            end: 48,
+            content: 'Vietnã',
+            type: 'mark',
+        },
+    ];
+
+    expect(matches).toEqual(expectedMatches);
+})

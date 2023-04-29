@@ -87,3 +87,46 @@ test('Regression test to prevent bug where selecting a second mark at the end of
 
     expect(struct).toEqual(expectedStruct);
 });
+
+test.only('Regression test to prevent bug where normalized strings would be messed up', () => {
+    const matches = [
+        {
+            start: 0,
+            end: 5,
+            content: 'Vietnã',
+            type: 'mark',
+        },
+        {
+            start: 43,
+            end: 48,
+            content: 'Vietnã',
+            type: 'mark',
+        },
+    ];
+    const content = 'Vietnã - Front | ft. Nocivo Shomon | Prod. Vietnã';
+
+    const struct = createStructFromMatches(matches, content);
+    console.log(struct);
+    const expectedStruct = [
+        {
+            start: 0,
+            end: 5,
+            content: 'Vietnã',
+            type: 'mark',
+        },
+        {
+            start: 6,
+            end: 42,
+            content: ' - Front | ft. Nocivo Shomon | Prod. ',
+            type: 'string',
+        },
+        {
+            start: 43,
+            end: 48,
+            content: 'Vietnã',
+            type: 'mark',
+        },
+    ];
+
+    expect(struct).toEqual(expectedStruct);
+});
