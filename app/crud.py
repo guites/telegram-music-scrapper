@@ -204,6 +204,7 @@ class TelegramCrud:
 
                 if artist_index is None:
                     artists.append({
+                        "id": artist.id,
                         "name": artist_name,
                         "telegram_message_ids": [artist.telegram_message_id]
                     })
@@ -214,3 +215,9 @@ class TelegramCrud:
 
         return artists
         
+    def read_telegram_message_artist_by_id(self, telegram_message_artist_id):
+        return (
+            self.db.query(TelegramMessageArtist)
+            .filter(TelegramMessageArtist.id == telegram_message_artist_id)
+            .first()
+        )

@@ -17,6 +17,7 @@ from crud import TelegramCrud, TelegramSessionCrud
 from database import SessionLocal, engine
 from schemas import TelegramMessageResponse, TelegramMessageArtistCreate, TelegramMessageArtistResponse
 from TelegramApi import TelegramApi
+from MusicBrainz import MusicBrainz
 from utils import check_artist_names_file
 
 models.Base.metadata.create_all(bind=engine)
@@ -266,6 +267,20 @@ def get_artists_positions():
 				"name": "Raimundos",
 			}]
     
+
+@app.get('/musicbrainz/artists/{artist_id}')
+def search_musicbrainz_artists(
+    artist_id: int,
+    db: Session = Depends(get_db),
+):
+    telegram_crud = TelegramCrud(db)
+    telegram_message_artist = telegram_crud.read_telegram_message_artist_by_id(artist_id)
+    if telegram_message_artist is None:
+        raise HTTPException(status_code=404, detail="Telegram message artist not found")
+    mbz = MusicBrainz()
+    mbz_artist = mbz.get_top_scoring_artist(telegram_message_artist.artist_name)
+    return mbz_artist
+
 
 def main():
     uvicorn.run(app, host="0.0.0.0", port=8000)
