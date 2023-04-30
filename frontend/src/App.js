@@ -1,18 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { read_telegram_messages, sync_telegram_messages } from './requests';
-import Table from 'react-bootstrap/Table';
-import Badge from 'react-bootstrap/Badge';
-import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import Container from 'react-bootstrap/Container';
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
-import Row from 'react-bootstrap/Row';
-import Tooltip from 'react-bootstrap/Tooltip';
-import Popover from 'react-bootstrap/Popover';
-import Form from 'react-bootstrap/Form';
-import Modal from 'react-bootstrap/Modal';
+import { Badge, Button, ButtonGroup, Container, Form, Modal, OverlayTrigger, Popover, Row, Table, Tooltip } from 'react-bootstrap';
+import { Header } from './components/Header';
+import ch00nky from './assets/ch00nky.gif';
 import './App.css';
-import ch00nky from './ch00nky.gif';
 
 export const App = () => {
   const [selectedRow, setSelectedRow] = useState(null);
@@ -268,12 +259,13 @@ export const App = () => {
   )
 
   return (
+    <>
+    <Header/>
     <Container>
     <Row>
       <div style={{display: "flex"}}><h1>Band Hunter</h1>&nbsp;<small><Badge bg="secondary">alpha</Badge></small></div>
-      <p><img style={{maxWidth: "300px", float: "left"}} src={ch00nky} alt="Chunky Kong" />Ajude a encontrar nomes de artistas ou bandas no título e descrição dos vídeos listados abaixo!<br/><br/>❓Para marcar um artista ou banda, selecione o texto com o mouse e confirme no popover.<br/><br/>Palavras <mark>grifadas em amarelo</mark> representam marcações feitas pelo usuário.<br/>Palavras <mark className="nlp-suggestion">grifadas em vermelho</mark> são sugestões do sistema.<br/><br/>❗Clique nas sugestões do sistema para aceitá-las ou recusá-las.</p>
-      <p>✅ Marque os vídeos como concluídos após achar todas as bandas e artistas.</p>
-      <p>❌ Sinalize vídeos que não são de música.</p>
+      <p><img style={{maxWidth: "300px", float: "left"}} src={ch00nky} alt="Chunky Kong" />Ajude a encontrar nomes de artistas ou bandas no título e descrição dos vídeos listados abaixo!<br/><br/>❓Para marcar um artista ou banda, selecione o texto com o mouse e confirme no popover.<br/><br/>✅ Marque os vídeos como concluídos após achar todas as bandas e artistas.<br/><br/>❌ Sinalize vídeos que não são de música.</p>
+      <p></p>
       <p></p>
     </Row>
     <Row>
@@ -333,6 +325,7 @@ export const App = () => {
       <Button disabled={gettingMoreMessages} onClick={ get_more_messages }>Mais mensagens</Button>
     </ButtonGroup>
     </Container>
+    </>
   );
 }
 

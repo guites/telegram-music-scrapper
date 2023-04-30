@@ -1,5 +1,6 @@
 import os
 import re
+import spacy
 import time
 import uvicorn
 
@@ -16,6 +17,7 @@ from crud import TelegramCrud, TelegramSessionCrud
 from database import SessionLocal, engine
 from schemas import TelegramMessageResponse, TelegramMessageArtistCreate, TelegramMessageArtistResponse
 from TelegramApi import TelegramApi
+from MusicBrainz import MusicBrainz
 from utils import check_artist_names_file
 
 models.Base.metadata.create_all(bind=engine)
@@ -91,6 +93,15 @@ async def read_telegram_messages(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return telegram_messages
+
+
+@app.get("/telegram_messages/artists")
+async def read_telegram_message_artists(
+    db: Session = Depends(get_db)
+):
+    telegram_crud = TelegramCrud(db)
+    telegram_message_artists = telegram_crud.read_telegram_message_artists()
+    return telegram_message_artists
 
 
 @app.get("/telegram_messages/{telegram_message_id}")
@@ -210,6 +221,65 @@ def generate_spacy_dataset(
         "count": len(dataset),
         "dataset": dataset,
     }
+
+
+@app.get("/spacy/inference")
+def spacy_inference(
+    video_title: str,
+    video_description: str = None,
+    db: Session = Depends(get_db),
+):
+    MODEL_PATH = "/home/guites/Projects/telegram-music-scrapper/app/spacy/models/macos-1/model-best"
+    nlp_ner = spacy.load(MODEL_PATH)
+
+    # concatenate title and description, if description is not null
+    if video_description is not None:
+        text = video_title + " " + video_description
+    else:
+        text = video_title
+
+    # remove accents and convert to lowercase
+    cleaned_text = unidecode(text.lower().strip())
+    cleaned_text = cleaned_text.replace("\n", " ")
+
+    doc = nlp_ner(cleaned_text)
+
+    return [(ent.text, ent.label_) for ent in doc.ents]
+    
+
+@app.get('/artists/positions')
+def get_artists_positions():
+    return [
+			{
+				"position": [51.505, -0.09],
+				"name": "Sepultura",
+			},
+			{
+				"position": [51.405, -0.09],
+				"name": "Nirvana",
+			},
+			{
+				"position": [51.455, -0.14],
+				"name": "Bring me the horizon",
+			},
+			{
+				"position": [51.545, -0.09],
+				"name": "Raimundos",
+			}]
+    
+
+@app.get('/musicbrainz/artists/{artist_id}')
+def search_musicbrainz_artists(
+    artist_id: int,
+    db: Session = Depends(get_db),
+):
+    telegram_crud = TelegramCrud(db)
+    telegram_message_artist = telegram_crud.read_telegram_message_artist_by_id(artist_id)
+    if telegram_message_artist is None:
+        raise HTTPException(status_code=404, detail="Telegram message artist not found")
+    mbz = MusicBrainz()
+    mbz_artist = mbz.get_top_scoring_artist(telegram_message_artist.artist_name)
+    return mbz_artist
 
 
 def main():
