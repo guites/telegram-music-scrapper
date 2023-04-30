@@ -1,6 +1,7 @@
 import { Badge, Button, Container } from 'react-bootstrap';
 import { useEffect, useState } from 'react';
 import { read_registered_artists } from './requests';
+import { Header } from './components/Header';
 import f00nky from './f00nky.gif';
 import './Artists.css';
 
@@ -43,6 +44,7 @@ export const Artists = () => {
 
     return (
         <>
+        <Header/>
         <Container>
                 <h1>Artists and Bands</h1>
                 <img style={{maxWidth: "300px", float: "left"}} src={f00nky} alt="Funky Kong" />
