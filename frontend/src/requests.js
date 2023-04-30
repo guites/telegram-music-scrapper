@@ -7,27 +7,35 @@ const read_registered_artists = async () => {
     return json_artists;
 };
 
+const read_artists_positions = async (offset_id) => {
+	const url = new URL(`${API_URL}/artists/positions`)
+
+	const requests = await fetch(url);
+	const json_messages = await requests.json();
+	return json_messages;
+};
+
 const read_telegram_messages = async (offset_id) => {
-    const url = new URL(`${API_URL}/telegram_messages/`)
+	const url = new URL(`${API_URL}/telegram_messages/`)
 
-    const params = {
-        site_name: 'YouTube',
-    };
-    if (offset_id !== null) {
-        params.offset_id = offset_id;
-    }
+	const params = {
+		site_name: 'YouTube',
+	};
+	if (offset_id !== null) {
+		params.offset_id = offset_id;
+	}
 
-    url.search = new URLSearchParams(params).toString();
+	url.search = new URLSearchParams(params).toString();
 
-    const raw_messages = await fetch(url);
-    const json_messages = await raw_messages.json();
-    return json_messages;
+	const raw_messages = await fetch(url);
+	const json_messages = await raw_messages.json();
+	return json_messages;
 };
 
 const sync_telegram_messages = async () => {
-    const raw_messages = await fetch(`${API_URL}/telegram_messages/sync`, {method: 'POST'});
-    const json_messages = await raw_messages.json();
-    return json_messages;
+	const raw_messages = await fetch(`${API_URL}/telegram_messages/sync`, { method: 'POST' });
+	const json_messages = await raw_messages.json();
+	return json_messages;
 }
 
-export { read_telegram_messages, sync_telegram_messages, read_registered_artists };
+export { read_telegram_messages, sync_telegram_messages, read_registered_artists, read_artists_positions };

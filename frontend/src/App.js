@@ -1,18 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { read_telegram_messages, sync_telegram_messages } from './requests';
-import Table from 'react-bootstrap/Table';
-import Badge from 'react-bootstrap/Badge';
-import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import Container from 'react-bootstrap/Container';
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
-import Row from 'react-bootstrap/Row';
-import Tooltip from 'react-bootstrap/Tooltip';
-import Popover from 'react-bootstrap/Popover';
-import Form from 'react-bootstrap/Form';
-import Modal from 'react-bootstrap/Modal';
+import { Badge, Button, ButtonGroup, Container, Form, Modal, OverlayTrigger, Popover, Row, Table, Tooltip } from 'react-bootstrap';
+import { Header } from './components/Header';
+import ch00nky from './assets/ch00nky.gif';
 import './App.css';
-import ch00nky from './ch00nky.gif';
 
 export const App = () => {
   const [selectedRow, setSelectedRow] = useState(null);
@@ -268,6 +259,8 @@ export const App = () => {
   )
 
   return (
+    <>
+    <Header/>
     <Container>
     <Row>
       <div style={{display: "flex"}}><h1>Band Hunter</h1>&nbsp;<small><Badge bg="secondary">alpha</Badge></small></div>
@@ -333,6 +326,7 @@ export const App = () => {
       <Button disabled={gettingMoreMessages} onClick={ get_more_messages }>Mais mensagens</Button>
     </ButtonGroup>
     </Container>
+    </>
   );
 }
 
