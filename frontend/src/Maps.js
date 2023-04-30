@@ -1,18 +1,17 @@
-import { Header } from './components/Header'
+import { Header } from './components/Header';
 import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { read_artists_positions } from './requests';
 
 import { Icon } from 'leaflet';
-import L from 'leaflet'
-import { MapContainer, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import "leaflet/dist/leaflet.css";
 
 
 
 export const Maps = () => {
-	const [data, setData] = useState("valor inicial");
 	const myIcon = new Icon({ iconUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png", iconSize: [26, 42] });
 	const [markers, setMarkers] = useState([])
 	const [mapRef, setMapRef] = useState(null);
@@ -37,12 +36,12 @@ export const Maps = () => {
 			}
 		});
 		setMarkers(new_markers);
-		console.log(new_markers);
 	};
 	return (
 		<>
 			<Header />
-			<Container>Mapas! {data} </Container>
+			<Container>
+			<h1>Visualize as bandas no mapa!</h1>
 
 			<Button className="mb-3 mt-3" onClick={() => changeMarkers()}>
 				Alterar marcações
@@ -60,6 +59,8 @@ export const Maps = () => {
 					</Marker>
 				))}
 			</MapContainer>
+			</Container>
+
 		</>
 	)
 };
