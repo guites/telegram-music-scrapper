@@ -41,24 +41,24 @@ export const Maps = () => {
 		<>
 			<Header />
 			<Container>
-			<h1>Visualize as bandas no mapa!</h1>
+				<h1>Visualize as bandas no mapa!</h1>
 
-			<Button className="mb-3 mt-3" onClick={() => changeMarkers()}>
-				Alterar marcações
-			</Button>
+				<Button className="mb-3 mt-3" onClick={() => changeMarkers()}>
+					Alterar marcações
+				</Button>
 
-			<MapContainer ref={setMapRef} style={{ height: 500 }} center={[51.505, -0.09]} zoom={13} scrollWheelZoom={true}>
-				<TileLayer
-					attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-				/>
+				<MapContainer ref={setMapRef} style={{ height: 500 }} center={[51.505, -0.09]} zoom={13} scrollWheelZoom={true}>
+					<TileLayer
+						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+						url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+					/>
 
-				{markers.map((marker, id) => (
-					<Marker key={id} icon={myIcon} position={marker.position}>
-						<Popup>{marker.name}</Popup>
-					</Marker>
-				))}
-			</MapContainer>
+					{markers.map((marker, id) => (
+						<Marker key={id} icon={myIcon} position={marker.position}>
+							<Popup>{marker.name}</Popup>
+						</Marker>
+					))}
+				</MapContainer>
 			</Container>
 
 		</>
