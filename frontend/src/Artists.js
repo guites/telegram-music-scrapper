@@ -1,27 +1,16 @@
 import { Accordion, Badge, Button, Card, Container, Form, ListGroup, ListGroupItem, Offcanvas, Row } from 'react-bootstrap';
 import { useEffect, useState } from 'react';
-import { read_registered_artists, read_musicbrainz_suggestions, read_telegram_message } from './requests';
+import { read_registered_artists, read_musicbrainz_suggestions, read_telegram_message, read_artists_positions_by_openstreet } from './requests';
 import { Header } from './components/Header';
 import f00nky from './f00nky.gif';
 import './Artists.css';
 
 export const Artists = () => {
-    const [selectedSuggestion, setSelectedSuggestion] = useState(null);
-    const [selectedArtist, setSelectedArtist] = useState(null);
-    const [artists, setArtists] = useState([]);
-    const [totalMsgs, setTotalMsgs] = useState(0);
-    const [countRange, setCountRange] = useState([0, 0]);
-    
-    const badgeColorCode = (count) => {
-        // split the count range in 10 parts
-        const range = countRange[1] - countRange[0];
-        const step = range / 10;
-        const index = Math.floor((count - countRange[0]) / step);
-        if (index > 9) {
-            return 'bg-9';
-        }
-        return `bg-${index}`;
-    };
+	const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+	const [selectedArtist, setSelectedArtist] = useState(null);
+	const [artists, setArtists] = useState([]);
+	const [totalMsgs, setTotalMsgs] = useState(0);
+	const [countRange, setCountRange] = useState([0, 0]);
 
     const getMessageCountRange = (artists_list) => {
         let totalMessages = 0;
@@ -34,20 +23,17 @@ export const Artists = () => {
         const max = Math.max(...counts);
         return [min, max, totalMessages];
     }
-
-    const get_telegram_message_artists = async () => {
-        const json_artists = await read_registered_artists();
-        
-        const [min, max, totalMessages] = getMessageCountRange(json_artists);
-        setCountRange([min, max]);
-        setTotalMsgs(totalMessages);
-        
-        setArtists(json_artists);
-    };
     
-    useEffect(() => {
-        get_telegram_message_artists();
-    }, []);
+	const badgeColorCode = (count) => {
+		// split the count range in 10 partss
+		const range = countRange[1] - countRange[0];
+		const step = range / 10;
+		const index = Math.floor((count - countRange[0]) / step);
+		if (index > 9) {
+			return 'bg-9';
+		}
+		return `bg-${index}`;
+	};
 
     const getMusicBrainzSuggestions = async (artist) => {
         const suggestions = await read_musicbrainz_suggestions(artist.id);
@@ -58,23 +44,12 @@ export const Artists = () => {
             video_urls.push({"id": telegram_message.id, "title": telegram_message.webpage_title, "url": telegram_message.webpage_url});
         }
 
-        setSelectedArtist({...artist, suggestions, video_urls});
-        if (suggestions.length > 0) {
-            setSelectedSuggestion(suggestions[0]);
-        } else {
-            setSelectedSuggestion(null);
-        }
-    }
+		const [min, max, totalMessages] = getMessageCountRange(json_artists);
+		setCountRange([min, max]);
+		setTotalMsgs(totalMessages);
 
-    const getScoreTag = (score) => {
-        if (score > 80) {
-            return <Badge bg="success">{score}%</Badge>
-        }
-        if (score > 50) {
-            return <Badge bg="warning">{score}%</Badge>
-        }
-        return <Badge bg="danger">{score}%</Badge>
-    }
+		setArtists(json_artists);
+	};
 
     const getSuggestionOptions = (suggestions) => {
         return suggestions.map((suggestion, idx) => {
@@ -86,68 +61,104 @@ export const Artists = () => {
         })
     }
 
-    const getSuggestionLiStacked = (label, value) => {
-        return (
-            <ListGroup.Item>
-            <div>
-                <div className="fw-bold"><small>{ label }</small></div>
-                <small>{value}</small>
-            </div>
-            </ListGroup.Item>
-        )
-    }
+	const getScoreTag = (score) => {
+		if (score > 80) {
+			return <Badge bg="success">{score}%</Badge>
+		}
+		if (score > 50) {
+			return <Badge bg="warning">{score}%</Badge>
+		}
+		return <Badge bg="danger">{score}%</Badge>
+	}
 
-    const getSuggestionLi = (label, value) => {
-        return (
-            <ListGroup.Item><small><strong>{ label }</strong>: {value}</small>
-            </ListGroup.Item>
-        )
-    }
+	const getSuggestionLiStacked = (label, value) => {
+		return (
+			<ListGroup.Item>
+				<div>
+					<div className="fw-bold"><small>{label}</small></div>
+					<small>{value}</small>
+				</div>
+			</ListGroup.Item>
+		)
+	}
 
-    const getSuggestionInfo = (suggestion) => {
-        if (!suggestion) {
-            return null;
-        }
-        const suggestionEls = [];
-        suggestionEls.push(getSuggestionLiStacked("MusicBrainz id", suggestion['mbid']));
-        suggestionEls.push(getSuggestionLiStacked("Name", suggestion['name']));
-        suggestionEls.push(getSuggestionLi("Score", suggestion['score']));
-        suggestionEls.push(getSuggestionLi("Ended", suggestion['life-span-ended']));
+	const getSuggestionLi = (label, value) => {
+		return (
+			<ListGroup.Item><small><strong>{label}</strong>: {value}</small>
+			</ListGroup.Item>
+		)
+	}
 
-        if (suggestion['type']) {
-            suggestionEls.push(getSuggestionLi("Type", suggestion['type']));
-        }
+	const confirmArtist = async (suggestion) => {
 
-        if (suggestion['area-name']) {
-            suggestionEls.push(getSuggestionLi("Area", suggestion['area-name']));
-        }
+		if (suggestion['area-name'] || suggestion['begin-area-name']) {
+			const beginArea = suggestion['begin-area-name'] ?? "";
+			const areaName = suggestion['area-name'] ?? "";
+			const position = await read_artists_positions_by_openstreet(areaName, beginArea);
+			if (position.length > 0) {
+				const lat = position[0]['lat'];
+				const lon = position[0]['lon'];
 
-        if (suggestion['country']) {
-            suggestionEls.push(getSuggestionLi("Country", suggestion['country']));
-        }
+				const coordinates = {
+					lat,
+					lon
+				}
+				setSelectedSuggestion({ ...selectedSuggestion, coordinates });
+			}
+		}
+	}
 
-        if (suggestion['life-span-begin']) {
-            suggestionEls.push(getSuggestionLi("Life span begin", suggestion['life-span-begin']));
-        }
+	const getSuggestionInfo = (suggestion) => {
+		if (!suggestion) {
+			return null;
+		}
+		const suggestionEls = [];
+		suggestionEls.push(getSuggestionLiStacked("MusicBrainz id", suggestion['mbid']));
+		suggestionEls.push(getSuggestionLiStacked("Name", suggestion['name']));
+		suggestionEls.push(getSuggestionLi("Score", suggestion['score']));
+		suggestionEls.push(getSuggestionLi("Ended", suggestion['life-span-ended']));
 
-        if (suggestion['life-span-end']) {
-            suggestionEls.push(getSuggestionLi("Life span end", suggestion['life-span-end']));
-        }
+		if (suggestion['type']) {
+			suggestionEls.push(getSuggestionLi("Type", suggestion['type']));
+		}
 
-        if (suggestion['begin-area-name']) {
-            suggestionEls.push(getSuggestionLi("Begin area", suggestion['begin-area-name']));
-        }
+		if (suggestion['area-name']) {
+			suggestionEls.push(getSuggestionLi("Area", suggestion['area-name']));
+		}
 
-        if (suggestion['disambiguation']) {
-            suggestionEls.push(getSuggestionLi("Disambiguation", suggestion['disambiguation']));
-        }
+		if (suggestion['country']) {
+			suggestionEls.push(getSuggestionLi("Country", suggestion['country']));
+		}
 
-        return (
-            <ListGroup variant="flush">
-                { suggestionEls }
-            </ListGroup>
-        )
-    }
+		if (suggestion['life-span-begin']) {
+			suggestionEls.push(getSuggestionLi("Life span begin", suggestion['life-span-begin']));
+		}
+
+		if (suggestion['life-span-end']) {
+			suggestionEls.push(getSuggestionLi("Life span end", suggestion['life-span-end']));
+		}
+
+		if (suggestion['begin-area-name']) {
+			suggestionEls.push(getSuggestionLi("Begin area", suggestion['begin-area-name']));
+		}
+
+		if (suggestion['disambiguation']) {
+			suggestionEls.push(getSuggestionLi("Disambiguation", suggestion['disambiguation']));
+		}
+
+		if (suggestion['coordinates']) {
+			const previewUrl = `https://maps.google.com/?q=${suggestion['coordinates']["lat"]},${suggestion['coordinates']["lon"]}`;
+			suggestionEls.push(getSuggestionLi("Preview coordinates", previewUrl))
+		}
+
+		suggestionEls.push(<Button onClick={() => confirmArtist(suggestion)}>Confirm artist</Button>)
+
+		return (
+			<ListGroup variant="flush">
+				{suggestionEls}
+			</ListGroup>
+		)
+	}
 
 
     return (
