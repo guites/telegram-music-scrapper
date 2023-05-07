@@ -104,6 +104,13 @@ class TelegramCrud:
             query = query.filter(TelegramMessage.id > offset_id)
 
         return query.all()
+    
+    def read_telegram_messages_by_ids(self, ids: List[int]):
+        return (
+            self.db.query(TelegramMessage)
+            .filter(TelegramMessage.id.in_(ids))
+            .all()
+        )
 
     def read_telegram_message_site_names(self):
         site_names = self.db.query(TelegramMessage.site_name).distinct().all()
