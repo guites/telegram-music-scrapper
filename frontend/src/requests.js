@@ -1,7 +1,7 @@
 const API_URL = 'http://localhost:8000';
 
 const read_registered_artists = async () => {
-    const url = new URL(`${API_URL}/telegram_messages/artists`);
+    const url = new URL(`${API_URL}/artists`);
     const request = await fetch(url);
     const json_artists = await request.json();
     return json_artists;

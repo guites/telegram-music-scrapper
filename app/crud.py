@@ -6,6 +6,7 @@ from sqlalchemy.orm import load_only, Session
 from typing import List, Union
 
 from models import (
+    Artist,
     TelegramMessage,
     TelegramMessageArtist,
     TelegramSession,
@@ -164,12 +165,28 @@ class TelegramCrud:
 
     def register_artist_to_telegram_message(self, message_id, artist_name):
         telegram_message = self.read_telegram_message(message_id)
+        if telegram_message is None:
+            return None
+        # see if a registered artist exists for the given aritst name
+        registered_artist = (
+            self.db.query(Artist)
+            .filter(Artist.name == artist_name)
+            .first()
+        )
+        if registered_artist is None:
+            # create a new artist
+            registered_artist = Artist(name=artist_name)
+            self.db.add(registered_artist)
+            self.db.commit()
+
+        # relate the artist to the telegram message
         telegram_message_artist = TelegramMessageArtist(
-            telegram_message_id=telegram_message.id, artist_name=artist_name
+            telegram_message_id=telegram_message.id, artist_id=registered_artist.id
         )
         self.db.add(telegram_message_artist)
         self.db.commit()
-        return telegram_message_artist
+
+        return registered_artist
 
     def update_telegram_message_is_music(self, message_id, is_music):
         telegram_message = self.read_telegram_message(message_id)
@@ -180,44 +197,17 @@ class TelegramCrud:
         self.db.commit()
         return telegram_message
 
-    def read_telegram_message_artists(self):
-        # get the telegram_message_artists field from the TelegramMessage table
-        telegram_messages_with_artists = (
-            self.db.query(TelegramMessage)
-            .filter(TelegramMessage.telegram_message_artists != None)
-            .all()
-        )
+    
+class ArtistCrud:
+    def __init__(self, db: Session):
+        self.db = db
 
-        artists = []
-
-        def get_artist_index(artist_name, artists_list):
-            for artist in artists_list:
-                if artist["name"] == artist_name:
-                    return artists.index(artist)
-            return None
-        
-        for telegram_message_artist in telegram_messages_with_artists:
-
-            for artist in telegram_message_artist.telegram_message_artists:
-                artist_name = artist.artist_name.title()
-                artist_index = get_artist_index(artist_name, artists)
-
-                if artist_index is None:
-                    artists.append({
-                        "id": artist.id,
-                        "name": artist_name,
-                        "telegram_message_ids": [artist.telegram_message_id]
-                    })
-                
-                if artist_index is not None and artist.telegram_message_id not in artists[artist_index]["telegram_message_ids"]:
-                    artists[artist_index]["telegram_message_ids"].append(artist.telegram_message_id)
-                
-
-        return artists
-        
-    def read_telegram_message_artist_by_id(self, telegram_message_artist_id):
+    def read_artist(self, artist_id):
         return (
-            self.db.query(TelegramMessageArtist)
-            .filter(TelegramMessageArtist.id == telegram_message_artist_id)
+            self.db.query(Artist)
+            .filter(Artist.id == artist_id)
             .first()
         )
+    
+    def read_artists(self):
+        return self.db.query(Artist).all()

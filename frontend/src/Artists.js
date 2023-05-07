@@ -26,7 +26,7 @@ export const Artists = () => {
     const getMessageCountRange = (artists_list) => {
         let totalMessages = 0;
         const counts = artists_list.map((artist) => {
-            const qtt = artist.telegram_message_ids.length;
+            const qtt = artist.telegram_messages.length;
             totalMessages += qtt;
             return qtt;
         });
@@ -53,10 +53,9 @@ export const Artists = () => {
         const suggestions = await read_musicbrainz_suggestions(artist.id);
         
         const video_urls = [];
-        for (let i = 0; i < artist.telegram_message_ids.length; i++) {
-            const msgId = artist.telegram_message_ids[i];
-            const telegram_message = await read_telegram_message(msgId);
-            video_urls.push({"title": telegram_message.webpage_title, "url": telegram_message.webpage_url});
+        for (let i = 0; i < artist.telegram_messages.length; i++) {
+            const telegram_message = artist.telegram_messages[i];
+            video_urls.push({"id": telegram_message.id, "title": telegram_message.webpage_title, "url": telegram_message.webpage_url});
         }
 
         setSelectedArtist({...artist, suggestions, video_urls});
@@ -80,7 +79,7 @@ export const Artists = () => {
     const getSuggestionOptions = (suggestions) => {
         return suggestions.map((suggestion, idx) => {
             return (
-                <option key={idx} value={idx}>
+                <option key={suggestions.mbid} value={idx}>
                     {suggestion.name} ({suggestion.score}%)
                 </option>
             )
@@ -162,7 +161,7 @@ export const Artists = () => {
                     return (
                         <Button onClick={() => getMusicBrainzSuggestions(artist)}
                         className="m-1" variant="light" key={artist.id}>
-                            {artist.name} <Badge className={badgeColorCode(artist.telegram_message_ids.length)}>{artist.telegram_message_ids.length}</Badge>
+                            {artist.name} <Badge className={badgeColorCode(artist.telegram_messages.length)}>{artist.telegram_messages.length}</Badge>
                         </Button>
                 )})}
         </Container>
@@ -177,7 +176,7 @@ export const Artists = () => {
                     <Accordion.Body>
                         <ListGroup variant="flush">
                         {selectedArtist?.video_urls.map((vid, idx) => {
-                            return ( <ListGroupItem><Button className="ta-left" variant="link" target="_blank" key={idx} href={vid.url}>{vid.title}</Button></ListGroupItem>)
+                            return ( <ListGroupItem><Button className="ta-left" variant="link" target="_blank" key={vid.id} href={vid.url}>{vid.title}</Button></ListGroupItem>)
                         })}
                         </ListGroup>
                     </Accordion.Body>

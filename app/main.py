@@ -13,12 +13,11 @@ from unidecode import unidecode
 
 import models
 
-from crud import TelegramCrud, TelegramSessionCrud
+from crud import ArtistCrud, TelegramCrud, TelegramSessionCrud
 from database import SessionLocal, engine
-from schemas import TelegramMessageResponse, TelegramMessageArtistCreate, TelegramMessageArtistResponse
+from schemas import ArtistSchema, TelegramMessageBase, TelegramMessageArtistCreate, TelegramMessageSchema
 from TelegramApi import TelegramApi
 from MusicBrainz import MusicBrainz
-from utils import check_artist_names_file
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -55,7 +54,7 @@ def get_db():
         db.close()
 
 
-@app.post("/telegram_messages/{telegram_message_id}/artist", status_code=201, response_model=TelegramMessageArtistResponse)
+@app.post("/telegram_messages/{telegram_message_id}/artist", status_code=201)
 def register_artist_to_telegram_message(
     telegram_message_id: int, artist: TelegramMessageArtistCreate, db: Session = Depends(get_db)
 ):
@@ -77,7 +76,7 @@ async def read_telegram_message_site_names(db: Session = Depends(get_db)):
     return telegram_message_site_names
 
 
-@app.get("/telegram_messages", response_model=List[TelegramMessageResponse])
+@app.get("/telegram_messages", response_model=List[TelegramMessageSchema])
 async def read_telegram_messages(
     site_name: Union[str, None] = None,
     is_music: Union[bool, None] = None,
@@ -95,19 +94,10 @@ async def read_telegram_messages(
     return telegram_messages
 
 
-@app.get("/telegram_messages/artists")
-async def read_telegram_message_artists(
-    db: Session = Depends(get_db)
-):
-    telegram_crud = TelegramCrud(db)
-    telegram_message_artists = telegram_crud.read_telegram_message_artists()
-    return telegram_message_artists
-
-
 @app.get("/telegram_messages/{telegram_message_id}")
 async def read_telegram_message(
     telegram_message_id: int, db: Session = Depends(get_db)
-) -> TelegramMessageResponse:
+) -> TelegramMessageBase:
     telegram_crud = TelegramCrud(db)
     telegram_message = telegram_crud.read_telegram_message(telegram_message_id)
     if telegram_message is None:
@@ -182,7 +172,7 @@ def generate_spacy_dataset(
     )
     dataset = []
     for msg in telegram_messages:
-        artists = msg.telegram_message_artists
+        artists = msg.artists
         if len(artists) == 0:
             continue
 
@@ -199,7 +189,7 @@ def generate_spacy_dataset(
         cleaned_text = unidecode(text.lower().strip())
         cleaned_text = cleaned_text.replace("\n", " ")
 
-        cleaned_artists = [unidecode(artist.artist_name.lower().strip()) for artist in artists]
+        cleaned_artists = [unidecode(artist.name.lower().strip()) for artist in artists]
 
         spans = []
         for cleaned_artist in cleaned_artists:
@@ -247,6 +237,15 @@ def spacy_inference(
     return [(ent.text, ent.label_) for ent in doc.ents]
     
 
+@app.get("/artists", response_model=List[ArtistSchema])
+async def read_telegram_message_artists(
+    db: Session = Depends(get_db)
+):
+    artists_crud = ArtistCrud(db)
+    artists = artists_crud.read_artists()
+    return artists
+
+
 @app.get('/artists/positions')
 def get_artists_positions():
     return [
@@ -273,12 +272,12 @@ def search_musicbrainz_artists(
     artist_id: int,
     db: Session = Depends(get_db),
 ):
-    telegram_crud = TelegramCrud(db)
-    telegram_message_artist = telegram_crud.read_telegram_message_artist_by_id(artist_id)
-    if telegram_message_artist is None:
-        raise HTTPException(status_code=404, detail="Telegram message artist not found")
+    artist_crud = ArtistCrud(db)
+    artist = artist_crud.read_artist(artist_id)
+    if artist is None:
+        raise HTTPException(status_code=404, detail="artist not found")
     mbz = MusicBrainz()
-    mbz_artist = mbz.get_top_scoring_artist(telegram_message_artist.artist_name)
+    mbz_artist = mbz.get_top_scoring_artist(artist.name)
     return mbz_artist
 
 

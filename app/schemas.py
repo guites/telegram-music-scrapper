@@ -1,16 +1,21 @@
-from pydantic import BaseModel
-from typing import List, Union
+"""The Base/Schema format is adapted from https://www.gormanalysis.com/blog/many-to-many-relationships-in-fastapi/
+using the association proxy strategy https://docs.sqlalchemy.org/en/20/orm/extensions/associationproxy.html#simplifying-association-objects"""
 
-class TelegramMessageArtistResponse(BaseModel):
+from pydantic import BaseModel, validator
+from sqlalchemy.ext.associationproxy import _AssociationList
+from typing import List, Union, Sequence
+
+class ArtistBase(BaseModel):
     id: int
-    telegram_message_id: int
-    artist_name: str
+    name: str
+    latitude: Union[float, None]
+    longitude: Union[float, None]
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
-
-class TelegramMessageResponse(BaseModel):
+class TelegramMessageBase(BaseModel):
     id: int
     telegram_id: int
     date: Union[str, None]
@@ -21,10 +26,32 @@ class TelegramMessageResponse(BaseModel):
     webpage_title: Union[str, None]
     webpage_description: Union[str, None]
     is_music: Union[bool, None]
-    telegram_message_artists: List[TelegramMessageArtistResponse]
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
+
+class ArtistSchema(ArtistBase):
+    telegram_messages: List[TelegramMessageBase]
+
+    # bugfix for association proxies https://github.com/pydantic/pydantic/issues/1038#issuecomment-863797154
+    @validator('telegram_messages', pre=True, whole=True)
+    def check_roles(cls, v):
+        if type(v) is _AssociationList or issubclass(cls, Sequence):
+            return list(v)
+        raise ValueError('not a valid list')
+
+
+class TelegramMessageSchema(TelegramMessageBase):
+    artists: List[Union[ArtistBase, None]]
+
+    # bugfix for association proxies https://github.com/pydantic/pydantic/issues/1038#issuecomment-863797154
+    @validator('artists', pre=True, whole=True)
+    def check_roles(cls, v):
+        if type(v) is _AssociationList or issubclass(cls, Sequence):
+            return list(v)
+        raise ValueError('not a valid list')
+
 
 class TelegramMessageArtistCreate(BaseModel):
     artist_name: str
