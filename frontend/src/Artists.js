@@ -35,14 +35,8 @@ export const Artists = () => {
 		return `bg-${index}`;
 	};
 
-    const getMusicBrainzSuggestions = async (artist) => {
-        const suggestions = await read_musicbrainz_suggestions(artist.id);
-        
-        const video_urls = [];
-        for (let i = 0; i < artist.telegram_messages.length; i++) {
-            const telegram_message = artist.telegram_messages[i];
-            video_urls.push({"id": telegram_message.id, "title": telegram_message.webpage_title, "url": telegram_message.webpage_url});
-        }
+    const get_telegram_message_artists = async () => {
+		const json_artists = await read_registered_artists();
 
 		const [min, max, totalMessages] = getMessageCountRange(json_artists);
 		setCountRange([min, max]);
@@ -50,6 +44,27 @@ export const Artists = () => {
 
 		setArtists(json_artists);
 	};
+
+	useEffect(() => {
+		get_telegram_message_artists();
+	}, []);
+
+	const getMusicBrainzSuggestions = async (artist) => {
+		const suggestions = await read_musicbrainz_suggestions(artist.id);
+
+		const video_urls = [];
+		for (let i = 0; i < artist.telegram_messages.length; i++) {
+			const telegram_message = artist.telegram_messages[i];
+			video_urls.push({ "id": telegram_message.id, "title": telegram_message.webpage_title, "url": telegram_message.webpage_url });
+		}
+
+		setSelectedArtist({ ...artist, suggestions, video_urls });
+		if (suggestions.length > 0) {
+			setSelectedSuggestion(suggestions[0]);
+		} else {
+			setSelectedSuggestion(null);
+		}
+	}
 
     const getSuggestionOptions = (suggestions) => {
         return suggestions.map((suggestion, idx) => {
