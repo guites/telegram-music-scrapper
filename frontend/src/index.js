@@ -9,6 +9,7 @@ import {
   createBrowserRouter,
   RouterProvider,
 } from "react-router-dom";
+import Messages from './Messages';
 
 
 const router = createBrowserRouter([
@@ -23,6 +24,10 @@ const router = createBrowserRouter([
   {
     path: "/artists",
     element: <Artists/>
+  },
+  {
+    path: "/messages",
+    element: <Messages/>
   }
 ]);
 

@@ -10,7 +10,7 @@ export const Header = () => {
 				<Container>
 					<Navbar.Brand href="/">Band Hunter</Navbar.Brand>
 					<Nav className="my-auto">
-						<Nav.Link href="/" target='_self'>Home</Nav.Link>
+						<Nav.Link href="/messages" target='_self'>Messages</Nav.Link>
 						<Nav.Link href="/artists" target='_self'>Artists</Nav.Link>
 						<Nav.Link href="/maps" target='_self'>Maps</Nav.Link>
 						<Nav.Link href="http://localhost:8000/docs" target='_blank'>Docs API</Nav.Link>
