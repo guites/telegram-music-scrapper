@@ -5,4 +5,5 @@
 .ipynb_checkpoints/
 **/*.db
 **/*.sql
+**/*.sqlite
 **/__pycache__
