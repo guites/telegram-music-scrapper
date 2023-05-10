@@ -76,7 +76,6 @@ export const Messages = () => {
             // if row has artists, set the ranges to be highlighted
             if (row.artists) {
                 for (const artist of row.artists) {
-                    console.log({ id: row.id, artist: artist.name });
                     // get start and end offset of artist name in row.webpage_title
                     const start = row.webpage_title.indexOf(artist.name);
                     const end = start + (artist.name.length - 1);
@@ -88,6 +87,7 @@ export const Messages = () => {
                         data: {
                             id: `title-${row.id}`,
                             artist: artist.name,
+                            origin: 'automatic',
                         },
                     };
                     batchRanges.push(range);
@@ -158,6 +158,10 @@ export const Messages = () => {
         const handleConfirmSelection = range => {
             confirmSelection(range);
         };
+        const handleRemoveSelection = range => {
+            removeSelection(range);
+        };
+
         return (
             <TooltipRenderer
                 letterNodes={currentRenderedNodes}
@@ -166,12 +170,21 @@ export const Messages = () => {
                 onMouseOverHighlightedWord={onMouseOverHighlightedWord}
                 handleCancelSelection={handleCancelSelection}
                 handleConfirmSelection={handleConfirmSelection}
+                handleRemoveSelection={handleRemoveSelection}
             />
         );
     };
 
+    const removeSelection = async range => {
+        const telegram_message_id = range.data.id
+            .replace('title-', '')
+            .replace('description-', '');
+        // TODO: should be a DELETE request
+        // TODO: should access artist_id from range.data
+        console.log('removin!');
+    };
+
     const confirmSelection = async range => {
-        console.log(range);
         // get substring from range based on start and end props
         const selectedText = range.text.substring(
             range.start,
@@ -196,6 +209,7 @@ export const Messages = () => {
             },
         );
         const response = await request.json();
+        // TODO: should save artist_id in range.data
     };
 
     const setIsMusicFlag = async (telegram_message_id, is_music) => {

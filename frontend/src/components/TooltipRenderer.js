@@ -1,6 +1,52 @@
 import Tooltip from 'rc-tooltip';
-import { Button } from 'react-bootstrap';
+import { Button, Container, Row } from 'react-bootstrap';
 import 'rc-tooltip/assets/bootstrap.css';
+
+const confirmArtistTooltip = (
+    range,
+    handleConfirmSelection,
+    handleCancelSelection,
+) => {
+    return (
+        <Container>
+            <Row>
+                <Button
+                    variant="success"
+                    size="sm"
+                    onClick={() => handleConfirmSelection(range)}
+                >
+                    Confirmar ✓
+                </Button>
+            </Row>
+            <hr />
+            <Row>
+                <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleCancelSelection(range)}
+                >
+                    Cancelar ×
+                </Button>
+            </Row>
+        </Container>
+    );
+};
+
+const removeArtistTooltip = (range, handleRemoveSelection) => {
+    return (
+        <Container>
+            <Row>
+                <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleRemoveSelection(range)}
+                >
+                    Remover ×
+                </Button>
+            </Row>
+        </Container>
+    );
+};
 
 export const TooltipRenderer = props => {
     const {
@@ -10,6 +56,7 @@ export const TooltipRenderer = props => {
         onMouseOverHighlightedWord,
         handleCancelSelection,
         handleConfirmSelection,
+        handleRemoveSelection,
     } = props;
     const confirmOnClick = range => {
         handleConfirmSelection(range);
@@ -17,20 +64,22 @@ export const TooltipRenderer = props => {
     const cancelOnClick = range => {
         handleCancelSelection(range);
     };
+    const removeOnClick = range => {
+        handleRemoveSelection(range);
+    };
     return (
         <Tooltip
             key={`${range.data.id}-${rangeIndex}`}
             onVisibleChange={onMouseOverHighlightedWord(range)}
             placement="top"
             overlay={
-                <div>
-                    <Button onClick={() => confirmOnClick(range)}>
-                        Confirmar seleção
-                    </Button>
-                    <Button onClick={() => cancelOnClick(range)}>
-                        Cancelar
-                    </Button>
-                </div>
+                range.data.origin === 'automatic'
+                    ? removeArtistTooltip(range, removeOnClick)
+                    : confirmArtistTooltip(
+                          range,
+                          confirmOnClick,
+                          cancelOnClick,
+                      )
             }
             defaultVisible={true}
             motion="zoom"

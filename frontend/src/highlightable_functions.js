@@ -18,12 +18,10 @@ const onTextHighlighted = (range, ranges, setRanges) => {
     const receivedRangeId = range.data.id;
     const currRange = ranges.find(range => range.id === receivedRangeId);
     const newRanges = ranges.filter(range => range.id !== receivedRangeId);
-    console.log({ currRange, newRanges });
     if (currRange) {
         currRange.ranges.push(highlightRange(range));
         setRanges([...newRanges, currRange]);
     } else {
-        console.log(highlightRange(range));
         setRanges([
             ...newRanges,
             {
