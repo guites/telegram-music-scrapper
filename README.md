@@ -53,9 +53,9 @@ Siga as instruções para cadastrar uma nova sessão para uso do Telegram.
 
 ### Rodando a API
 
-Rode o projeto com
+Rode o projeto com (o comando deve ser rodado da raíz do repositório, ou seja, fora do diretório app/)
 
-    uvicorn main:app --reload
+    uvicorn app.main:app --reload
 
 Você pode verificar a documentação em `http://localhost:8000/docs`.
 
