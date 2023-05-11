@@ -1,5 +1,3 @@
-from decouple import config
-from glob import glob
 from sys import exit
 from telethon import TelegramClient
 from telethon.tl.functions.messages import GetHistoryRequest

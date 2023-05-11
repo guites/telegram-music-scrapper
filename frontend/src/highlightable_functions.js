@@ -71,10 +71,25 @@ const batchAddHighlight = (batchRanges, ranges, setRanges) => {
     setRanges(newRanges);
 };
 
+const updateRangeById = (range, updatedSelection, ranges, setRanges) => {
+    const receivedRangeId = range.data.id;
+    const currRange = ranges.find(range => range.id === receivedRangeId);
+    const newRanges = ranges.filter(range => range.id !== receivedRangeId);
+    console.log('currRange', currRange);
+    if (currRange) {
+        const selectionToUpdate = currRange.ranges.findIndex(
+            r => r.start === range.start && r.end === range.end,
+        );
+        currRange.ranges[selectionToUpdate] = updatedSelection;
+        setRanges([...newRanges, currRange]);
+    }
+};
+
 export {
     batchAddHighlight,
     getRangeById,
     onTextHighlighted,
     resetHightlight,
     resetHighlightRange,
+    updateRangeById,
 };

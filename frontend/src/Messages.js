@@ -6,6 +6,7 @@ import {
 import {
     getRangeById,
     onTextHighlighted,
+    updateRangeById,
 } from './highlightable_functions';
 import {
     Badge,
@@ -86,7 +87,7 @@ export const Messages = () => {
                         text: row.webpage_title,
                         data: {
                             id: `title-${row.id}`,
-                            artist: artist.name,
+                            artist_id: artist.id,
                             origin: 'automatic',
                         },
                     };
@@ -179,9 +180,20 @@ export const Messages = () => {
         const telegram_message_id = range.data.id
             .replace('title-', '')
             .replace('description-', '');
-        // TODO: should be a DELETE request
-        // TODO: should access artist_id from range.data
-        console.log('removin!');
+        const artist_id = range.data.artist_id;
+        const request = await fetch(
+            `http://localhost:8000/telegram_messages/${telegram_message_id}/artist/${artist_id}`,
+            {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            },
+        );
+        // TODO: should give feedback to user
+        if (request.status !== 204) return;
+
+        resetHightlight(range, ranges, setRanges);
     };
 
     const confirmSelection = async range => {
@@ -209,7 +221,19 @@ export const Messages = () => {
             },
         );
         const response = await request.json();
-        // TODO: should save artist_id in range.data
+        updateRangeById(
+            range,
+            {
+                ...range,
+                data: {
+                    ...range.data,
+                    artist_id: response.artist_id,
+                    origin: 'automatic',
+                },
+            },
+            ranges,
+            setRanges,
+        );
     };
 
     const setIsMusicFlag = async (telegram_message_id, is_music) => {

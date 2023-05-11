@@ -195,6 +195,36 @@ class TelegramCrud:
 
         return registered_artist
 
+
+    def unregister_artist_from_telegram_message(self, message_id, artist_id):
+        telegram_message = self.read_telegram_message(message_id)
+        if telegram_message is None:
+            return None
+        # see if a registered artist exists for the given aritst name
+        registered_artist = (
+            self.db.query(Artist)
+            .filter(Artist.id == artist_id)
+            .first()
+        )
+        if registered_artist is None:
+            return None
+
+        # remove the relation between the artist and the telegram message
+        telegram_message_artist = (
+            self.db.query(TelegramMessageArtist)
+            .filter(
+                TelegramMessageArtist.telegram_message_id == telegram_message.id,
+                TelegramMessageArtist.artist_id == registered_artist.id,
+            )
+            .first()
+        )
+        if telegram_message_artist is None:
+            return None
+        self.db.delete(telegram_message_artist)
+        self.db.commit()
+
+        return registered_artist
+
     def update_telegram_message_is_music(self, message_id, is_music):
         telegram_message = self.read_telegram_message(message_id)
         if telegram_message is None:
