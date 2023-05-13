@@ -16,6 +16,7 @@ import {
     read_musicbrainz_suggestions,
 } from './requests';
 import { Header } from './components/Header';
+import { DeleteArtistModal } from './components/DeleteArtistModal';
 import f00nky from './f00nky.gif';
 import './Artists.css';
 import { ArtistMusicBrainzSuggestionInfo } from './components/ArtistMusicBrainzSuggestionInfo';
@@ -26,6 +27,7 @@ export const Artists = () => {
     const [artists, setArtists] = useState([]);
     const [totalMsgs, setTotalMsgs] = useState(0);
     const [countRange, setCountRange] = useState([0, 0]);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const getMessageCountRange = artists_list => {
         let totalMessages = 0;
@@ -108,11 +110,18 @@ export const Artists = () => {
 
     const removeArtist = async artist => {
         console.log(artist);
+        // TODO: remove artist from database and update the artists list
     };
 
     return (
         <>
             <Header />
+            <DeleteArtistModal
+                show={showDeleteModal}
+                handleClose={() => setShowDeleteModal(false)}
+                handleDelete={() => removeArtist(selectedArtist)}
+                artist={selectedArtist}
+            />
             <Container>
                 <h1>Artists and Bands</h1>
                 <img
@@ -248,7 +257,7 @@ export const Artists = () => {
                                 <Button
                                     variant="danger"
                                     onClick={() =>
-                                        removeArtist(selectedArtist)
+                                        setShowDeleteModal(true)
                                     }
                                 >
                                     Remove artist
