@@ -1,6 +1,6 @@
 # Telegram Music Scrapper
 
-O objetivo desse projeto é pegar músicas jogadas em um canal do telegram através de URLs do youtube. 
+O objetivo desse projeto é pegar músicas jogadas em um canal do telegram através de URLs do youtube.
 
 ## Instalação
 
@@ -43,9 +43,9 @@ o `CHANNEL_ID` será `12223346006`.
 
 ### Criando sessões para acesso ao Telegram
 
-Primeiro, rode o script `TelegramApi.py` diretamente, dentro da pasta app.
+Primeiro, rode o script `TelegramApi.py` diretamente, da raíz do repositório.
 
-    python3 TelegramApi.py
+    python3 -m app.TelegramApi
 
 Siga as instruções para cadastrar uma nova sessão para uso do Telegram.
 
