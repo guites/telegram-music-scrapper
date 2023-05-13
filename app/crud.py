@@ -1,11 +1,9 @@
-import sqlalchemy as sa
-
 from datetime import datetime
 from sqlalchemy import inspect
 from sqlalchemy.orm import load_only, Session
 from typing import List, Union
 
-from models import (
+from app.models import (
     Artist,
     TelegramMessage,
     TelegramMessageArtist,

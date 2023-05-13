@@ -4,7 +4,7 @@ from typing import List
 
 from ..dependencies import get_db
 from ..crud import ArtistCrud
-from schemas import ArtistSchema
+from ..schemas import ArtistSchema
 
 router = APIRouter(
     prefix="/artists",
