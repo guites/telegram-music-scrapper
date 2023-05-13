@@ -58,10 +58,32 @@ export const Messages = () => {
         return text.find(item => item.id === id);
     };
 
+    const addToRanges = (text, artist, type, row_id) => {
+        // get start and end offset of artist name in row.webpage_title
+        const start = text.indexOf(artist.name);
+        if (start === -1) {
+            return;
+        }
+        const end = start + (artist.name.length - 1);
+        // add range to ranges
+        const range = {
+            start: start,
+            end: end,
+            text: text,
+            data: {
+                id: `${type}-${row_id}`,
+                artist_id: artist.id,
+                origin: 'automatic',
+            },
+        };
+        return range;
+    };
+
     const request_telegram_messages = useCallback(async () => {
         const telegram_messages = await read_telegram_messages(null);
         const initial_text = [];
-        const batchRanges = [];
+        const batchTitleRanges = [];
+        const batchDescrRanges = [];
         telegram_messages.forEach((row, _) => {
             initial_text.push({
                 id: row.id,
@@ -80,25 +102,29 @@ export const Messages = () => {
                     if (!artist) {
                         continue;
                     }
-                    // get start and end offset of artist name in row.webpage_title
-                    const start = row.webpage_title.indexOf(artist.name);
-                    const end = start + (artist.name.length - 1);
-                    // add range to ranges
-                    const range = {
-                        start: start,
-                        end: end,
-                        text: row.webpage_title,
-                        data: {
-                            id: `title-${row.id}`,
-                            artist_id: artist.id,
-                            origin: 'automatic',
-                        },
-                    };
-                    batchRanges.push(range);
+                    const titleRange = addToRanges(
+                        row.webpage_title,
+                        artist,
+                        'title',
+                        row.id,
+                    );
+                    if (titleRange) {
+                        batchTitleRanges.push(titleRange);
+                    }
+                    const descrRange = addToRanges(
+                        row.webpage_description,
+                        artist,
+                        'descr',
+                        row.id,
+                    );
+                    if (descrRange) {
+                        batchDescrRanges.push(descrRange);
+                    }
                 }
             }
         });
-        batchAddHighlight(batchRanges, ranges, setRanges);
+        batchAddHighlight(batchTitleRanges, titleRanges, setTitleRanges);
+        batchAddHighlight(batchDescrRanges, descrRanges, setDescrRanges);
         setText(initial_text);
     }, []);
 
@@ -146,24 +172,28 @@ export const Messages = () => {
         request_telegram_messages();
     }, []);
 
-    const handleOnTextHighlighted = range => {
-        onTextHighlighted(range, ranges, setRanges);
+    const handleOnTitleHighlighted = range => {
+        onTextHighlighted(range, titleRanges, setTitleRanges);
     };
 
-    const customRenderer = (
+    const handleOnDescrHighlighted = range => {
+        onTextHighlighted(range, descrRanges, setDescrRanges);
+    };
+
+    const descrRenderer = (
         currentRenderedNodes,
         currentRenderedRange,
         currentRenderedIndex,
         onMouseOverHighlightedWord,
     ) => {
         const handleCancelSelection = range => {
-            resetHightlight(range, ranges, setRanges);
+            resetHightlight(range, descrRanges, setDescrRanges);
         };
         const handleConfirmSelection = range => {
             confirmSelection(range);
         };
         const handleRemoveSelection = range => {
-            removeSelection(range);
+            removeSelection(range, 'descr');
         };
 
         return (
@@ -179,10 +209,37 @@ export const Messages = () => {
         );
     };
 
-    const removeSelection = async range => {
-        const telegram_message_id = range.data.id
-            .replace('title-', '')
-            .replace('description-', '');
+    const titleRenderer = (
+        currentRenderedNodes,
+        currentRenderedRange,
+        currentRenderedIndex,
+        onMouseOverHighlightedWord,
+    ) => {
+        const handleCancelSelection = range => {
+            resetHightlight(range, titleRanges, setTitleRanges);
+        };
+        const handleConfirmSelection = range => {
+            confirmSelection(range);
+        };
+        const handleRemoveSelection = range => {
+            removeSelection(range, 'title');
+        };
+
+        return (
+            <TooltipRenderer
+                key={`${currentRenderedRange.data.id}-${currentRenderedIndex}`}
+                letterNodes={currentRenderedNodes}
+                range={currentRenderedRange}
+                onMouseOverHighlightedWord={onMouseOverHighlightedWord}
+                handleCancelSelection={handleCancelSelection}
+                handleConfirmSelection={handleConfirmSelection}
+                handleRemoveSelection={handleRemoveSelection}
+            />
+        );
+    };
+
+    const removeSelection = async (range, type) => {
+        const telegram_message_id = range.data.id.replace(`${type}-`, '');
         const artist_id = range.data.artist_id;
         const request = await fetch(
             `http://localhost:8000/telegram_messages/${telegram_message_id}/artist/${artist_id}`,
@@ -196,7 +253,12 @@ export const Messages = () => {
         // TODO: should give feedback to user
         if (request.status !== 204) return;
 
-        resetHightlight(range, ranges, setRanges);
+        if (type == 'title') {
+            resetHightlight(range, titleRanges, setTitleRanges);
+        }
+        if (type === 'descr') {
+            resetHightlight(range, descrRanges, setDescrRanges);
+        }
     };
 
     const confirmSelection = async range => {
@@ -207,7 +269,7 @@ export const Messages = () => {
         );
         const telegram_message_id = range.data.id
             .replace('title-', '')
-            .replace('description-', '');
+            .replace('descr-', '');
         console.log(
             `Matching artist ${selectedText} to message ${selectedText}`,
         );
@@ -234,8 +296,8 @@ export const Messages = () => {
                     origin: 'automatic',
                 },
             },
-            ranges,
-            setRanges,
+            titleRanges,
+            setTitleRanges,
         );
     };
 
@@ -305,7 +367,8 @@ export const Messages = () => {
         </Modal>
     );
 
-    const [ranges, setRanges] = useState([]);
+    const [titleRanges, setTitleRanges] = useState([]);
+    const [descrRanges, setDescrRanges] = useState([]);
 
     return (
         <>
@@ -360,7 +423,7 @@ export const Messages = () => {
                                         <td className="webpage_title">
                                             <Highlightable
                                                 ranges={getRangeById(
-                                                    ranges,
+                                                    titleRanges,
                                                     `title-${row.id}`,
                                                 )}
                                                 enabled={true}
@@ -368,7 +431,7 @@ export const Messages = () => {
                                                     textAlign: 'left',
                                                 }}
                                                 onTextHighlighted={
-                                                    handleOnTextHighlighted
+                                                    handleOnTitleHighlighted
                                                 }
                                                 id={`title-${row.id}`}
                                                 highlightStyle={{
@@ -376,7 +439,7 @@ export const Messages = () => {
                                                         '#ffcc80',
                                                 }}
                                                 rangeRenderer={
-                                                    customRenderer
+                                                    titleRenderer
                                                 }
                                                 text={
                                                     row.webpage_title ?? ''
@@ -386,12 +449,12 @@ export const Messages = () => {
                                         <td className="webpage_description">
                                             <Highlightable
                                                 ranges={getRangeById(
-                                                    ranges,
+                                                    descrRanges,
                                                     `descr-${row.id}`,
                                                 )}
                                                 enabled={true}
                                                 onTextHighlighted={
-                                                    handleOnTextHighlighted
+                                                    handleOnDescrHighlighted
                                                 }
                                                 id={`descr-${row.id}`}
                                                 highlightStyle={{
@@ -399,7 +462,7 @@ export const Messages = () => {
                                                         '#ffcc80',
                                                 }}
                                                 rangeRenderer={
-                                                    customRenderer
+                                                    descrRenderer
                                                 }
                                                 text={
                                                     row.webpage_description ??
