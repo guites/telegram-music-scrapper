@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -9,7 +9,7 @@ from ..schemas import ArtistSchema
 router = APIRouter(
     prefix="/artists",
     tags=["artists"],
-    responses={404: {"description": "Not found"}},
+    responses={404: {"description": "Not found"}, 204: {"description": "Success with no content"}},
 )
 
 @router.get("/", response_model=List[ArtistSchema])
@@ -19,6 +19,17 @@ async def read_telegram_message_artists(
     artists_crud = ArtistCrud(db)
     artists = artists_crud.read_artists()
     return artists
+
+@router.delete("/{artist_id}", status_code=204)
+async def delete_telegram_message_artist(
+    artist_id: int,
+	db: Session = Depends(get_db)
+):
+	artists_crud = ArtistCrud(db)
+	artist = artists_crud.read_artist(artist_id)
+	if artist is None:
+		raise HTTPException(status_code=404, detail="Artist not found")
+	artists_crud.delete_artist(artist)
 
 
 @router.get('/positions')

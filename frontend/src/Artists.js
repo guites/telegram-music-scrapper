@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import {
     read_registered_artists,
     read_musicbrainz_suggestions,
+    delete_artist,
 } from './requests';
 import { Header } from './components/Header';
 import { DeleteArtistModal } from './components/DeleteArtistModal';
@@ -109,8 +110,13 @@ export const Artists = () => {
     };
 
     const removeArtist = async artist => {
-        console.log(artist);
-        // TODO: remove artist from database and update the artists list
+        // TODO: handle cases where deletion failed due to some restriciton
+        await delete_artist(artist.id);
+        // remove artist from list by id
+        const newArtists = artists.filter(a => a.id !== artist.id);
+        setArtists(newArtists);
+        setShowDeleteModal(false);
+        setSelectedArtist(null);
     };
 
     return (

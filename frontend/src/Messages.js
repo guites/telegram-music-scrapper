@@ -77,6 +77,9 @@ export const Messages = () => {
             // if row has artists, set the ranges to be highlighted
             if (row.artists) {
                 for (const artist of row.artists) {
+                    if (!artist) {
+                        continue;
+                    }
                     // get start and end offset of artist name in row.webpage_title
                     const start = row.webpage_title.indexOf(artist.name);
                     const end = start + (artist.name.length - 1);

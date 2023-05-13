@@ -246,3 +246,8 @@ class ArtistCrud:
     
     def read_artists(self):
         return self.db.query(Artist).all()
+    
+    def delete_artist(self, artist):
+        self.db.delete(artist)
+        self.db.commit()
+        return artist
