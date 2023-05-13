@@ -392,9 +392,9 @@ export const Artists = () => {
                                             </h2>
                                             &nbsp;
                                             <small>
-                                                {/* {getScoreTag(
+                                                {getScoreTag(
                                                     selectedSuggestion?.score,
-                                                )} */}
+                                                )}
                                             </small>
                                         </div>
                                     </Row>
