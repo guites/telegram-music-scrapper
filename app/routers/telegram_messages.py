@@ -61,7 +61,7 @@ async def read_telegram_message_site_names(db: Session = Depends(get_db)):
     telegram_message_site_names = telegram_crud.read_telegram_message_site_names()
     return telegram_message_site_names
 
-@router.post("/telegram_messages/sync")
+@router.post("/sync")
 async def sync_telegram_messages(db: Session = Depends(get_db)):
     """Fetches telegram messages from the telegram api to the database."""
     telegram_session_crud = TelegramSessionCrud(db)
