@@ -52,7 +52,6 @@ export const TooltipRenderer = props => {
     const {
         letterNodes,
         range,
-        rangeIndex,
         onMouseOverHighlightedWord,
         handleCancelSelection,
         handleConfirmSelection,
@@ -69,7 +68,6 @@ export const TooltipRenderer = props => {
     };
     return (
         <Tooltip
-            key={`${range.data.id}-${rangeIndex}`}
             onVisibleChange={onMouseOverHighlightedWord(range)}
             placement="top"
             overlay={

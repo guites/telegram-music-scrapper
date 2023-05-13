@@ -165,9 +165,9 @@ export const Messages = () => {
 
         return (
             <TooltipRenderer
+                key={`${currentRenderedRange.data.id}-${currentRenderedIndex}`}
                 letterNodes={currentRenderedNodes}
                 range={currentRenderedRange}
-                rangeIndex={currentRenderedIndex}
                 onMouseOverHighlightedWord={onMouseOverHighlightedWord}
                 handleCancelSelection={handleCancelSelection}
                 handleConfirmSelection={handleConfirmSelection}
@@ -242,7 +242,6 @@ export const Messages = () => {
             { method: 'PATCH' },
         );
         const response = await request.json();
-        console.log(response);
 
         // TODO: handle errors
         setText(text.filter(item => item.id !== telegram_message_id));
@@ -347,68 +346,64 @@ export const Messages = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {text.map((row, index) => (
-                                <tr className="float-anchor" key={row.id}>
-                                    <td>{row.id}</td>
-                                    <td>{row.message}</td>
-                                    <td className="webpage_title">
-                                        <Highlightable
-                                            ranges={getRangeById(
-                                                ranges,
-                                                `title-${row.id}`,
-                                            )}
-                                            enabled={true}
-                                            style={{ textAlign: 'left' }}
-                                            onTextHighlighted={
-                                                handleOnTextHighlighted
-                                            }
-                                            id={`title-${row.id}`}
-                                            highlightStyle={{
-                                                backgroundColor: '#ffcc80',
-                                            }}
-                                            rangeRenderer={customRenderer}
-                                            text={row.webpage_title ?? ''}
-                                        />
-                                    </td>
-                                    <td className="webpage_description">
-                                        <Highlightable
-                                            ranges={getRangeById(
-                                                ranges,
-                                                `descr-${row.id}`,
-                                            )}
-                                            enabled={true}
-                                            onTextHighlighted={
-                                                onTextHighlighted
-                                            }
-                                            id={`descr-${row.id}`}
-                                            highlightStyle={{
-                                                backgroundColor: '#ffcc80',
-                                            }}
-                                            text={
-                                                row.webpage_description ??
-                                                ''
-                                            }
-                                        />
-                                    </td>
-                                </tr>
-                            ))}
-                            {/* <tr className="float-anchor">
-              <td>
-                1
-              </td>
-              <td>https://youtu.be/GBe5KoLYepk</td>
-              <td className="webpage_title">
-                <Highlightable ranges={getRangeById('vid-descr-1')}
-                enabled={true}
-                onTextHighlighted={onTextHighlighted}
-                id={'vid-descr-1'}
-                highlightStyle={{
-                  backgroundColor: '#ffcc80'
-                }}
-                text={"Rael - Passiflora part. Céu, RDD e Ailton Krenak"}  
-              />  
-              </td>
-            </tr> */}
+                            {text.map((row, index) => {
+                                return (
+                                    <tr
+                                        className="float-anchor"
+                                        key={row.id}
+                                    >
+                                        <td>{row.id}</td>
+                                        <td>{row.message}</td>
+                                        <td className="webpage_title">
+                                            <Highlightable
+                                                ranges={getRangeById(
+                                                    ranges,
+                                                    `title-${row.id}`,
+                                                )}
+                                                enabled={true}
+                                                style={{
+                                                    textAlign: 'left',
+                                                }}
+                                                onTextHighlighted={
+                                                    handleOnTextHighlighted
+                                                }
+                                                id={`title-${row.id}`}
+                                                highlightStyle={{
+                                                    backgroundColor:
+                                                        '#ffcc80',
+                                                }}
+                                                rangeRenderer={
+                                                    customRenderer
+                                                }
+                                                text={
+                                                    row.webpage_title ?? ''
+                                                }
+                                            />
+                                        </td>
+                                        <td className="webpage_description">
+                                            <Highlightable
+                                                ranges={getRangeById(
+                                                    ranges,
+                                                    `descr-${row.id}`,
+                                                )}
+                                                enabled={true}
+                                                onTextHighlighted={
+                                                    onTextHighlighted
+                                                }
+                                                id={`descr-${row.id}`}
+                                                highlightStyle={{
+                                                    backgroundColor:
+                                                        '#ffcc80',
+                                                }}
+                                                text={
+                                                    row.webpage_description ??
+                                                    ''
+                                                }
+                                            />
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </Table>
                 </Row>
