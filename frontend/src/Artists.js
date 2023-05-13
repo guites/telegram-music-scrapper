@@ -14,12 +14,11 @@ import { useEffect, useState } from 'react';
 import {
     read_registered_artists,
     read_musicbrainz_suggestions,
-    read_telegram_message,
-    read_artists_positions_by_openstreet,
 } from './requests';
 import { Header } from './components/Header';
 import f00nky from './f00nky.gif';
 import './Artists.css';
+import { ArtistMusicBrainzSuggestionInfo } from './components/ArtistMusicBrainzSuggestionInfo';
 
 export const Artists = () => {
     const [selectedSuggestion, setSelectedSuggestion] = useState(null);
@@ -107,178 +106,8 @@ export const Artists = () => {
         return <Badge bg="danger">{score}%</Badge>;
     };
 
-    const getSuggestionLiStacked = (label, value, key) => {
-        return (
-            <ListGroup.Item key={key}>
-                <div>
-                    <div className="fw-bold">
-                        <small>{label}</small>
-                    </div>
-                    <small>{value}</small>
-                </div>
-            </ListGroup.Item>
-        );
-    };
-
-    const getSuggestionLi = (label, value, key) => {
-        return (
-            <ListGroup.Item key={key}>
-                <small>
-                    <strong>{label}</strong>: {value}
-                </small>
-            </ListGroup.Item>
-        );
-    };
-
-    const confirmArtist = async suggestion => {
-        if (suggestion['area-name'] || suggestion['begin-area-name']) {
-            const beginArea = suggestion['begin-area-name'] ?? '';
-            const areaName = suggestion['area-name'] ?? '';
-            const position = await read_artists_positions_by_openstreet(
-                areaName,
-                beginArea,
-            );
-            if (position.length > 0) {
-                const lat = position[0]['lat'];
-                const lon = position[0]['lon'];
-
-                const coordinates = {
-                    lat,
-                    lon,
-                };
-                setSelectedSuggestion({
-                    ...selectedSuggestion,
-                    coordinates,
-                });
-            }
-        }
-    };
-
-    const getSuggestionInfo = suggestion => {
-        if (!suggestion) {
-            return null;
-        }
-        const suggestionEls = [];
-        suggestionEls.push(
-            getSuggestionLiStacked(
-                'MusicBrainz id',
-                suggestion['mbid'],
-                `${suggestion['mbid']}-0`,
-            ),
-        );
-        suggestionEls.push(
-            getSuggestionLiStacked(
-                'Name',
-                suggestion['name'],
-                `${suggestion['mbid']}-1`,
-            ),
-        );
-        suggestionEls.push(
-            getSuggestionLi(
-                'Score',
-                suggestion['score'],
-                `${suggestion['mbid']}-2`,
-            ),
-        );
-        suggestionEls.push(
-            getSuggestionLi(
-                'Ended',
-                suggestion['life-span-ended'],
-                `${suggestion['mbid']}-3`,
-            ),
-        );
-
-        if (suggestion['type']) {
-            suggestionEls.push(
-                getSuggestionLi(
-                    'Type',
-                    suggestion['type'],
-                    `${suggestion['mbid']}-4`,
-                ),
-            );
-        }
-
-        if (suggestion['area-name']) {
-            suggestionEls.push(
-                getSuggestionLi(
-                    'Area',
-                    suggestion['area-name'],
-                    `${suggestion['mbid']}-5`,
-                ),
-            );
-        }
-
-        if (suggestion['country']) {
-            suggestionEls.push(
-                getSuggestionLi(
-                    'Country',
-                    suggestion['country'],
-                    `${suggestion['mbid']}-6`,
-                ),
-            );
-        }
-
-        if (suggestion['life-span-begin']) {
-            suggestionEls.push(
-                getSuggestionLi(
-                    'Life span begin',
-                    suggestion['life-span-begin'],
-                    `${suggestion['mbid']}-7`,
-                ),
-            );
-        }
-
-        if (suggestion['life-span-end']) {
-            suggestionEls.push(
-                getSuggestionLi(
-                    'Life span end',
-                    suggestion['life-span-end'],
-                    `${suggestion['mbid']}-8`,
-                ),
-            );
-        }
-
-        if (suggestion['begin-area-name']) {
-            suggestionEls.push(
-                getSuggestionLi(
-                    'Begin area',
-                    suggestion['begin-area-name'],
-                    `${suggestion['mbid']}-9`,
-                ),
-            );
-        }
-
-        if (suggestion['disambiguation']) {
-            suggestionEls.push(
-                getSuggestionLi(
-                    'Disambiguation',
-                    suggestion['disambiguation'],
-                    `${suggestion['mbid']}-10`,
-                ),
-            );
-        }
-
-        if (suggestion['coordinates']) {
-            const previewUrl = `https://maps.google.com/?q=${suggestion['coordinates']['lat']},${suggestion['coordinates']['lon']}`;
-            suggestionEls.push(
-                getSuggestionLi(
-                    'Preview coordinates',
-                    previewUrl,
-                    `${suggestion['mbid']}-11`,
-                ),
-            );
-        }
-
-        suggestionEls.push(
-            <Button
-                key={`${suggestion['mbid']}-12`}
-                onClick={() => confirmArtist(suggestion)}
-            >
-                Confirm artist
-            </Button>,
-        );
-
-        return <ListGroup variant="flush">{suggestionEls}</ListGroup>;
+    const removeArtist = async artist => {
+        console.log(artist);
     };
 
     return (
@@ -398,8 +227,32 @@ export const Artists = () => {
                                             </small>
                                         </div>
                                     </Row>
-                                    {getSuggestionInfo(selectedSuggestion)}
+                                    {
+                                        <ArtistMusicBrainzSuggestionInfo
+                                            suggestion={selectedSuggestion}
+                                            onConfirmArtist={updatedSuggestion =>
+                                                setSelectedSuggestion(
+                                                    updatedSuggestion,
+                                                )
+                                            }
+                                        />
+                                    }
                                 </Container>
+                            </Accordion.Body>
+                        </Accordion.Item>
+                        <Accordion.Item eventKey="2">
+                            <Accordion.Header>
+                                Remove artist
+                            </Accordion.Header>
+                            <Accordion.Body>
+                                <Button
+                                    variant="danger"
+                                    onClick={() =>
+                                        removeArtist(selectedArtist)
+                                    }
+                                >
+                                    Remove artist
+                                </Button>
                             </Accordion.Body>
                         </Accordion.Item>
                     </Accordion>
