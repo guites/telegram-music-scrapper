@@ -391,13 +391,16 @@ export const Messages = () => {
                                                 )}
                                                 enabled={true}
                                                 onTextHighlighted={
-                                                    onTextHighlighted
+                                                    handleOnTextHighlighted
                                                 }
                                                 id={`descr-${row.id}`}
                                                 highlightStyle={{
                                                     backgroundColor:
                                                         '#ffcc80',
                                                 }}
+                                                rangeRenderer={
+                                                    customRenderer
+                                                }
                                                 text={
                                                     row.webpage_description ??
                                                     ''
