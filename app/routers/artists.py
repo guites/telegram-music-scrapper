@@ -51,3 +51,10 @@ def get_artists_positions():
 				"position": [51.545, -0.09],
 				"name": "Raimundos",
 			}]
+
+@router.post('/{artist_id}/positions')
+def post_create_artist_position(
+   artist_id: int,
+	db: Session = Depends(get_db)
+):
+	return artist_id
