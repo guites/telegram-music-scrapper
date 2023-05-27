@@ -55,3 +55,8 @@ class TelegramMessageSchema(TelegramMessageBase):
 
 class TelegramMessageArtistCreate(BaseModel):
     artist_name: str
+
+
+class ArtistPositions(BaseModel):
+	latitude: float
+	longitude: float

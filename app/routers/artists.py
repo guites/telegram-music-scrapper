@@ -4,7 +4,7 @@ from typing import List
 
 from ..dependencies import get_db
 from ..crud import ArtistCrud
-from ..schemas import ArtistSchema
+from ..schemas import ArtistSchema, ArtistPositions
 
 router = APIRouter(
     prefix="/artists",
@@ -52,9 +52,20 @@ def get_artists_positions():
 				"name": "Raimundos",
 			}]
 
-@router.post('/{artist_id}/positions')
+@router.post('/{artist_id}/positions', response_model=ArtistSchema)
 def post_create_artist_position(
    artist_id: int,
+   positions: ArtistPositions,
 	db: Session = Depends(get_db)
 ):
-	return artist_id
+
+	# Pesquisar id no banco de dados, e ver se o artista existe
+	artists_crud = ArtistCrud(db)
+	artist = artists_crud.read_artist(artist_id)
+	# Se não existir retornar um erro
+	if artist is None:
+		raise HTTPException(status_code=404, detail="Artist not found")
+
+	# Se existir, atualizar o campo latitude e longitude com o valor recebido na requisição.
+	artist = artists_crud.update_artist_position(artist, positions)
+	return artist

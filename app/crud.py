@@ -92,17 +92,17 @@ class TelegramCrud:
 
         if site_name is not None:
             query = query.filter(TelegramMessage.site_name == site_name)
-        
+
         if is_music is not None:
             query = query.filter(TelegramMessage.is_music == is_music)
         else:
             query = query.filter(TelegramMessage.is_music == None)
-        
+
         if offset_id is not None:
             query = query.filter(TelegramMessage.id > offset_id)
 
         return query.all()
-    
+
     def read_telegram_messages_by_ids(self, ids: List[int]):
         return (
             self.db.query(TelegramMessage)
@@ -232,7 +232,7 @@ class TelegramCrud:
         self.db.commit()
         return telegram_message
 
-    
+
 class ArtistCrud:
     def __init__(self, db: Session):
         self.db = db
@@ -243,11 +243,18 @@ class ArtistCrud:
             .filter(Artist.id == artist_id)
             .first()
         )
-    
+
     def read_artists(self):
         return self.db.query(Artist).all()
-    
+
     def delete_artist(self, artist):
         self.db.delete(artist)
+        self.db.commit()
+        return artist
+
+    def update_artist_position(self, artist, position):
+        artist.latitude = position.latitude
+        artist.longitude = position.longitude
+        self.db.add(artist)
         self.db.commit()
         return artist
