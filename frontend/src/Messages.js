@@ -13,7 +13,6 @@ import {
     Button,
     ButtonGroup,
     Container,
-    Modal,
     Row,
     Table,
 } from 'react-bootstrap';
@@ -27,13 +26,6 @@ import {
 } from './highlightable_functions';
 
 export const Messages = () => {
-    const [selectedRow, setSelectedRow] = useState(null);
-    const [artist, setArtist] = useState({
-        query: null,
-        options: null,
-        loading: false,
-    });
-    const [popOver, setPopOver] = useState({});
     const [text, setText] = useState([
         {
             id: null,
@@ -45,18 +37,6 @@ export const Messages = () => {
         },
     ]);
     const [gettingMoreMessages, setGettingMoreMessages] = useState(false);
-
-    const [showIsMusicModal, setShowIsMusicModal] = useState(false);
-    const handleShowIsMusicModal = isMusic =>
-        setShowIsMusicModal({
-            ...findById(selectedRow),
-            isMusic: isMusic,
-        });
-    const handleCloseIsMusicModal = () => setShowIsMusicModal(false);
-
-    const findById = id => {
-        return text.find(item => item.id === id);
-    };
 
     const addToRanges = (text, artist, type, row_id) => {
         if (!text) {
@@ -129,7 +109,7 @@ export const Messages = () => {
         batchAddHighlight(batchTitleRanges, titleRanges, setTitleRanges);
         batchAddHighlight(batchDescrRanges, descrRanges, setDescrRanges);
         setText(initial_text);
-    }, []);
+    });
 
     const get_more_messages = async () => {
         setGettingMoreMessages(true);
@@ -256,7 +236,7 @@ export const Messages = () => {
         // TODO: should give feedback to user
         if (request.status !== 204) return;
 
-        if (type == 'title') {
+        if (type === 'title') {
             resetHightlight(range, titleRanges, setTitleRanges);
         }
         if (type === 'descr') {
@@ -304,72 +284,6 @@ export const Messages = () => {
         );
     };
 
-    const setIsMusicFlag = async (telegram_message_id, is_music) => {
-        const request = await fetch(
-            `http://localhost:8000/telegram_messages/${telegram_message_id}?is_music=${is_music}`,
-            { method: 'PATCH' },
-        );
-        const response = await request.json();
-
-        // TODO: handle errors
-        setText(text.filter(item => item.id !== telegram_message_id));
-        setPopOver({ id: null });
-        setShowIsMusicModal(false);
-    };
-
-    const setIsMusicModal = (
-        <Modal
-            show={showIsMusicModal != null}
-            onHide={handleCloseIsMusicModal}
-        >
-            <Modal.Header closeButton>
-                <Modal.Title>
-                    {showIsMusicModal.id} |{' '}
-                    {showIsMusicModal.isMusic
-                        ? 'Marcou todos os artistas?'
-                        : 'Este vídeo não é de música?'}
-                </Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <p>
-                    <a href={showIsMusicModal.webpage_url} target="_blank">
-                        {showIsMusicModal?.webpage_title}
-                    </a>
-                </p>
-                <p
-                    style={{
-                        maxHeight: '300px',
-                        overflowY: 'scroll',
-                        whiteSpace: 'pre-line',
-                    }}
-                >
-                    {showIsMusicModal?.webpage_description}
-                </p>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button
-                    variant="secondary"
-                    onClick={handleCloseIsMusicModal}
-                >
-                    Fechar
-                </Button>
-                <Button
-                    variant={
-                        showIsMusicModal.isMusic ? 'success' : 'danger'
-                    }
-                    onClick={() =>
-                        setIsMusicFlag(
-                            showIsMusicModal.id,
-                            showIsMusicModal.isMusic,
-                        )
-                    }
-                >
-                    {showIsMusicModal.isMusic ? 'Marquei' : 'Não é música'}
-                </Button>
-            </Modal.Footer>
-        </Modal>
-    );
-
     const [titleRanges, setTitleRanges] = useState([]);
     const [descrRanges, setDescrRanges] = useState([]);
 
@@ -411,7 +325,6 @@ export const Messages = () => {
                                 <th>#</th>
                                 <th>URL do vídeo</th>
                                 <th>Título</th>
-                                <th>Descrição</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -446,30 +359,6 @@ export const Messages = () => {
                                                 }
                                                 text={
                                                     row.webpage_title ?? ''
-                                                }
-                                            />
-                                        </td>
-                                        <td className="webpage_description">
-                                            <Highlightable
-                                                ranges={getRangeById(
-                                                    descrRanges,
-                                                    `descr-${row.id}`,
-                                                )}
-                                                enabled={true}
-                                                onTextHighlighted={
-                                                    handleOnDescrHighlighted
-                                                }
-                                                id={`descr-${row.id}`}
-                                                highlightStyle={{
-                                                    backgroundColor:
-                                                        '#ffcc80',
-                                                }}
-                                                rangeRenderer={
-                                                    descrRenderer
-                                                }
-                                                text={
-                                                    row.webpage_description ??
-                                                    ''
                                                 }
                                             />
                                         </td>
