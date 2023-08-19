@@ -304,17 +304,42 @@ export const Messages = () => {
                             src={ch00nky}
                             alt="Chunky Kong"
                         />
-                        Ajude a marcar artistas e bandas nos vídeos
-                        listados abaixo!
+                        Marque artistas e bandas nos vídeos listados
+                        abaixo!
                         <br />
                         <br />
                         ❓Para marcar, selecione o texto com o mouse.
                         <br />
-                        <br />✅ Não esqueça de marcar os vídeos como
-                        concluídos!
+                        <br />✅ Sinalize os vídeos como concluídos!
                         <br />
                         <br />❌ Sinalize vídeos que não são de música.
                     </p>
+                    <details>
+                        <summary>Perguntas frequentes</summary>
+                        <ol>
+                            <li>
+                                <strong>
+                                    Vídeo é de música, mas não tem o nome
+                                    do artista/banda no título?
+                                </strong>
+                                <br />
+                                Sinalize o vídeo como concluído sem marcar
+                                nenhum artista. Isso ajuda o modelo a
+                                entender palavras que não significam
+                                artistas em seu devido contexto.
+                            </li>
+                            <li>
+                                <strong>
+                                    Nome do artista está escrito errado?
+                                </strong>
+                                <br />
+                                Marque-o mesmo assim. O importante é que,
+                                naquele contexto, aquele conjunto de
+                                palavras significa um nome de artista ou
+                                banda.
+                            </li>
+                        </ol>
+                    </details>
                     <p></p>
                     <p></p>
                 </Row>
@@ -325,6 +350,7 @@ export const Messages = () => {
                                 <th>#</th>
                                 <th>URL do vídeo</th>
                                 <th>Título</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -361,6 +387,22 @@ export const Messages = () => {
                                                     row.webpage_title ?? ''
                                                 }
                                             />
+                                        </td>
+                                        <td>
+                                            <ButtonGroup>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                >
+                                                    ✅
+                                                </Button>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                >
+                                                    ❌
+                                                </Button>
+                                            </ButtonGroup>
                                         </td>
                                     </tr>
                                 );
