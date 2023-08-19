@@ -32,6 +32,7 @@ Você vai precisar de um arquivo `.env` com as seguintes propriedades:
     TELEGRAM_SHORT_TITLE=myshorttitle
     TELEGRAM_CHANNEL_ID=123445667
     DATABASE_PATH=/absolute/path/to/your/database/file.sql
+    SPACY_MODEL_PATH=/absolute/pth/to/your/trained/spacy/model-last
 
 Para conseguir os valores de `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_APP_TITLE` e `TELEGRAM_SHORT_TITLE`, você precisa criar um aplicativo no telegram. Você pode fazer isso seguindo [estas instruções](https://core.telegram.org/api/obtaining_api_id).
 
@@ -40,6 +41,8 @@ O `TELEGRAM_CHANNEL_ID` pode ser retirado da URL do seu grupo no telegram. Por e
     https://web.telegram.org/z/#-12223346006
 
 o `CHANNEL_ID` será `12223346006`.
+
+O `SPACY_MODEL_PATH` é necessário para realizar inferências usando o modelo, mas não é obrigatório para rodar a aplicação. Ver seção **Configurando o módulo de IA**.
 
 #### Criando sessões para acesso ao Telegram
 

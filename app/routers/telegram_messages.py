@@ -1,10 +1,13 @@
+import os
 import re
+import spacy
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import List, Union
 
+from definitions import SPACY_MODEL_PATH
 from dependencies import get_db
 from crud import TelegramCrud, TelegramSessionCrud
 from schemas import (
@@ -72,6 +75,56 @@ def get_all_messages_with_artists(db: Session = Depends(get_db)):
         response_data.append(element)
 
     return {"count": len(response_data), "dataset": response_data}
+
+
+@router.post("/suggestions")
+async def get_spacy_nlp_suggestions(
+    telegram_message_ids: List[int],
+    db: Session = Depends(get_db),
+):
+    # get the messages from the database
+    telegram_crud = TelegramCrud(db)
+    telegram_messages = telegram_crud.read_telegram_messages_by_ids(
+        telegram_message_ids
+    )
+
+    # load the spacy model
+    if SPACY_MODEL_PATH is None or not os.path.exists(SPACY_MODEL_PATH):
+        raise HTTPException(
+            status_code=500, detail="No available spaCy model was found."
+        )
+    nlp_ner = spacy.load(SPACY_MODEL_PATH)
+
+    # for each message, get the youtube video title and run through the spacy model
+    for msg in telegram_messages:
+        # skip if message is not webpage or if website is not youtube
+        if not msg.is_webpage or msg.site_name != "YouTube":
+            continue
+
+        # save the title as the inference text
+        text = msg.webpage_title
+
+        # run the spacy model
+        doc = nlp_ner(text)
+
+        # save suggestions to the message object
+        suggestions = {"webpage_title": []}
+        for ent in doc.ents:
+            title_text_start = text.find(ent.text)
+            if title_text_start != -1:
+                # check if there isnt a suggestion for the same text with the same start and end index
+                # this is to avoid duplicates
+                if not any(
+                    suggestion[0] == title_text_start
+                    and suggestion[1] == title_text_start + len(ent.text)
+                    for suggestion in suggestions["webpage_title"]
+                ):
+                    suggestions["webpage_title"].append(
+                        (title_text_start, title_text_start + len(ent.text), ent.text)
+                    )
+
+        msg.suggestions = suggestions
+    return telegram_messages
 
 
 @router.get("/{telegram_message_id}")
