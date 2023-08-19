@@ -59,6 +59,18 @@ Rode o projeto com (o comando deve ser rodado da raíz do repositório, ou seja,
 
 Você pode verificar a documentação em `http://localhost:8000/docs`.
 
+#### Ativando o pre-commit
+
+Este projeto tem uma série de pre-commit hooks instalados através do [pre-commit](https://pre-commit.com/). Ele é instalado junto com as dependências da API, e precisa ser ativado. Pra isso, certifique-se de que está com o ambiente virtual ativo. Depois, na raíz do projeto, rode
+
+    pre-commit install
+
+Você pode testá-lo com
+
+    pre-commit run --all-files
+
+Agora, os hooks irão rodar antes de cada commit.
+
 ### Iniciando o Front End
 
 Acesse o diretório `frontend` e instale as dependências do javascript usando npm.
