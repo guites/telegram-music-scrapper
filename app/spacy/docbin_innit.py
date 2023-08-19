@@ -1,3 +1,4 @@
+import os
 import requests
 import spacy
 
@@ -30,8 +31,14 @@ for training_example in tqdm(training_data["annotations"]):
     doc.ents = filtered_ents
     doc_bin.add(doc)
 
-doc_bin.to_disk(
-    f"training_data_{date.today().strftime('%d_%m_%Y')}.spacy"
-)  # save the docbin object
+date_dmy = date.today().strftime("%d_%m_%Y")
+training_data_file = f"training_data_{date_dmy}.spacy"
+if os.path.exists(training_data_file):
+    file_postfix = 1
+    while os.path.exists(training_data_file):
+        training_data_file = f"training_data_{date_dmy}_{file_postfix}.spacy"
+        file_postfix = file_postfix + 1
+
+doc_bin.to_disk(training_data_file)  # save the docbin object
 
 # TODO: test trained model on new data: https://newscatcherapi.com/blog/train-custom-named-entity-recognition-ner-model-with-spacy-v3
