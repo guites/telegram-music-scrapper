@@ -55,16 +55,3 @@ class TelegramMessageSchema(TelegramMessageBase):
 
 class TelegramMessageArtistCreate(BaseModel):
     artist_name: str
-
-
-class TelegramMessageWithArtists(BaseModelOrm):
-    class _TelegramMessage(BaseModelOrm):
-        id: int
-        webpage_title: str
-        # webpage_description: str
-
-    # class _Artist(BaseModelOrm):
-    #     name: str
-
-    telegram_message: _TelegramMessage
-    artist_names: List[str]

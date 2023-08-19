@@ -12,7 +12,6 @@ from ..schemas import (
     TelegramMessageArtistCreate,
     TelegramMessageBase,
     TelegramMessageSchema,
-    TelegramMessageWithArtists,
 )
 from ..TelegramApi import TelegramApi
 
@@ -44,17 +43,10 @@ async def read_telegram_messages(
     return telegram_messages
 
 
-@router.get("/artists")  # , response_model=List[TelegramMessageWithArtists])
+@router.get("/artists")
 def get_all_messages_with_artists(db: Session = Depends(get_db)):
     telegram_crud = TelegramCrud(db)
     message_artists = telegram_crud.read_telegram_messages_with_artists()
-    # formatted_data = [
-    #     TelegramMessageWithArtists(
-    #         telegram_message=row[0].telegram_message,
-    #         artist_names=row.artist_names.split(","),
-    #     )
-    #     for row in message_artists
-    # ]
 
     response_data = []
 
