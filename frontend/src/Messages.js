@@ -59,6 +59,9 @@ export const Messages = () => {
     };
 
     const addToRanges = (text, artist, type, row_id) => {
+        if (!text) {
+            return;
+        }
         // get start and end offset of artist name in row.webpage_title
         const start = text.indexOf(artist.name);
         if (start === -1) {
