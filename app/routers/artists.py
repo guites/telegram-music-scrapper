@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from ..dependencies import get_db
-from ..crud import ArtistCrud
-from ..schemas import ArtistSchema
+from dependencies import get_db
+from crud import ArtistCrud
+from schemas import ArtistSchema
 
 router = APIRouter(
     prefix="/artists",

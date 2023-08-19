@@ -3,11 +3,11 @@ from telethon import TelegramClient
 from telethon.tl.functions.messages import GetHistoryRequest
 from telethon.tl.types import PeerChannel
 
-import app.models as models
+import models as models
 
-from app.crud import TelegramCrud, TelegramSessionCrud
-from app.database import DatabaseWrapper, engine
-from app.definitions import TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_CHANNEL_ID
+from crud import TelegramCrud, TelegramSessionCrud
+from database import DatabaseWrapper, engine
+from definitions import TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_CHANNEL_ID
 
 
 class TelegramApi:

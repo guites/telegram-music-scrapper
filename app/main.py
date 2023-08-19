@@ -10,14 +10,14 @@ from sqlalchemy.orm import Session
 from typing import List
 from unidecode import unidecode
 
-from .models import Base
+from models import Base
 
-from .crud import ArtistCrud, TelegramCrud
-from .database import engine
-from .definitions import SPACY_MODEL_PATH
-from .dependencies import get_db
-from .routers import artists, telegram_messages
-from .MusicBrainz import MusicBrainz
+from crud import ArtistCrud, TelegramCrud
+from database import engine
+from definitions import SPACY_MODEL_PATH
+from dependencies import get_db
+from routers import artists, telegram_messages
+from MusicBrainz import MusicBrainz
 
 Base.metadata.create_all(bind=engine)
 

@@ -8,23 +8,23 @@ O projeto é composto de uma API Web escrita em Python, um frontend em React e u
 
 ### Iniciando a API Web
 
-Todos os passos abaixo devem ser realizados na raíz do projeto.
+Todos os passos abaixo devem ser realizados no diretório `app/`.
 
 Crie um ambiente virtual.
 
-    python3 -m venv app/.venv
+    python3 -m venv .venv
 
 Ative o ambiente.
 
-    source app/.venv/bin/activate
+    source .venv/bin/activate
 
 Instale as dependências.
 
-    pip3 install -r app/requirements.txt
+    pip3 install -r requirements.txt
 
 #### Configurações da API
 
-Você vai precisar de um arquivo `app/.env` com as seguintes propriedades:
+Você vai precisar de um arquivo `.env` com as seguintes propriedades:
 
     TELEGRAM_API_ID=123456345745
     TELEGRAM_API_HASH=asifhafio98asu890asfhoi
@@ -45,7 +45,7 @@ o `CHANNEL_ID` será `12223346006`.
 
 Primeiro, rode o script `TelegramApi.py` diretamente, da raíz do repositório.
 
-    python3 -m app.TelegramApi
+    python3 -m TelegramApi
 
 Siga as instruções para cadastrar uma nova sessão para uso do Telegram.
 
@@ -55,7 +55,7 @@ Siga as instruções para cadastrar uma nova sessão para uso do Telegram.
 
 Rode o projeto com (o comando deve ser rodado da raíz do repositório, ou seja, fora do diretório app/)
 
-    uvicorn app.main:app --reload
+    uvicorn main:app --reload
 
 Você pode verificar a documentação em `http://localhost:8000/docs`.
 

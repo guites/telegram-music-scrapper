@@ -10,7 +10,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 
-from app.database import Base
+from database import Base
 
 
 class TelegramSession(Base):

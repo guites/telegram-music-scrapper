@@ -5,15 +5,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import List, Union
 
-from ..dependencies import get_db
-from ..crud import TelegramCrud, TelegramSessionCrud
-from ..schemas import (
+from dependencies import get_db
+from crud import TelegramCrud, TelegramSessionCrud
+from schemas import (
     ArtistBase,
     TelegramMessageArtistCreate,
     TelegramMessageBase,
     TelegramMessageSchema,
 )
-from ..TelegramApi import TelegramApi
+from TelegramApi import TelegramApi
 
 router = APIRouter(
     prefix="/telegram_messages",

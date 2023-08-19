@@ -3,7 +3,7 @@ from sqlalchemy import inspect, func
 from sqlalchemy.orm import load_only, Session
 from typing import List, Union
 
-from app.models import (
+from models import (
     Artist,
     TelegramMessage,
     TelegramMessageArtist,
