@@ -1,3 +1,5 @@
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -5,14 +7,24 @@ from typing import List, Union
 
 from ..dependencies import get_db
 from ..crud import TelegramCrud, TelegramSessionCrud
-from ..schemas import ArtistBase, TelegramMessageArtistCreate, TelegramMessageBase, TelegramMessageSchema
+from ..schemas import (
+    ArtistBase,
+    TelegramMessageArtistCreate,
+    TelegramMessageBase,
+    TelegramMessageSchema,
+    TelegramMessageWithArtists,
+)
 from ..TelegramApi import TelegramApi
 
 router = APIRouter(
     prefix="/telegram_messages",
     tags=["telegram_messages"],
-    responses={404: {"description": "Not found"}, 204: {"description": "Success with no content"}},
+    responses={
+        404: {"description": "Not found"},
+        204: {"description": "Success with no content"},
+    },
 )
+
 
 @router.get("/", response_model=List[TelegramMessageSchema])
 async def read_telegram_messages(
@@ -31,6 +43,45 @@ async def read_telegram_messages(
         raise HTTPException(status_code=400, detail=str(e))
     return telegram_messages
 
+
+@router.get("/artists")  # , response_model=List[TelegramMessageWithArtists])
+def get_all_messages_with_artists(db: Session = Depends(get_db)):
+    telegram_crud = TelegramCrud(db)
+    message_artists = telegram_crud.read_telegram_messages_with_artists()
+    # formatted_data = [
+    #     TelegramMessageWithArtists(
+    #         telegram_message=row[0].telegram_message,
+    #         artist_names=row.artist_names.split(","),
+    #     )
+    #     for row in message_artists
+    # ]
+
+    response_data = []
+
+    for message_artist in message_artists:
+        # find every index of artist name in text
+        text = message_artist[0].telegram_message.webpage_title
+        artists = message_artist.artist_names.split(",")
+
+        spans = []
+        for artist in artists:
+            matches = re.finditer(artist, text)
+            artist_spans = []
+            for match in matches:
+                match_start = match.start()
+                artist_spans.append((match_start, match_start + len(artist), "artist"))
+            spans = spans + artist_spans
+        element = {
+            "text": text,
+            "entities": spans,
+            "artists": artists,
+            "telegram_message_id": message_artist[0].telegram_message.id,
+        }
+        response_data.append(element)
+
+    return {"count": len(response_data), "dataset": response_data}
+
+
 @router.get("/{telegram_message_id}")
 async def read_telegram_message(
     telegram_message_id: int, db: Session = Depends(get_db)
@@ -40,6 +91,7 @@ async def read_telegram_message(
     if telegram_message is None:
         raise HTTPException(status_code=404, detail="Telegram message not found")
     return telegram_message
+
 
 @router.patch("/{telegram_message_id}")
 async def update_telegram_message_is_music(
@@ -55,11 +107,13 @@ async def update_telegram_message_is_music(
         raise HTTPException(status_code=404, detail="Telegram message not found")
     return telegram_message
 
+
 @router.get("/site_names")
 async def read_telegram_message_site_names(db: Session = Depends(get_db)):
     telegram_crud = TelegramCrud(db)
     telegram_message_site_names = telegram_crud.read_telegram_message_site_names()
     return telegram_message_site_names
+
 
 @router.post("/sync")
 async def sync_telegram_messages(db: Session = Depends(get_db)):
@@ -87,8 +141,10 @@ async def sync_telegram_messages(db: Session = Depends(get_db)):
         telegram_api = TelegramApi(unused_session.session_name)
     except ValueError as e:
         print(f"Error: {e}")
-        raise HTTPException(status_code=500, detail="Error while connecting to the telegram api.")
-    
+        raise HTTPException(
+            status_code=500, detail="Error while connecting to the telegram api."
+        )
+
     # get messages older than the starting offset
     telegram_api.set_message_offset(starting_offset_id)
 
@@ -103,9 +159,14 @@ async def sync_telegram_messages(db: Session = Depends(get_db)):
 
     return saved_messages
 
-@router.post("/{telegram_message_id}/artist", status_code=201, response_model=ArtistBase)
+
+@router.post(
+    "/{telegram_message_id}/artist", status_code=201, response_model=ArtistBase
+)
 def register_artist_to_telegram_message(
-    telegram_message_id: int, artist: TelegramMessageArtistCreate, db: Session = Depends(get_db)
+    telegram_message_id: int,
+    artist: TelegramMessageArtistCreate,
+    db: Session = Depends(get_db),
 ):
     telegram_crud = TelegramCrud(db)
     try:
@@ -114,8 +175,11 @@ def register_artist_to_telegram_message(
         )
     except IntegrityError as e:
         print(str(e))
-        raise HTTPException(status_code=400, detail="Artist already registered to telegram message.")
+        raise HTTPException(
+            status_code=400, detail="Artist already registered to telegram message."
+        )
     return telegram_message_artist
+
 
 @router.delete("/{telegram_message_id}/artist/{artist_id}", status_code=204)
 def unregister_artist_from_telegram_message(
@@ -126,4 +190,6 @@ def unregister_artist_from_telegram_message(
         telegram_message_id, artist_id
     )
     if unregistered_artist is None:
-        raise HTTPException(status_code=400, detail="Artist not registered to telegram message.")
+        raise HTTPException(
+            status_code=400, detail="Artist not registered to telegram message."
+        )

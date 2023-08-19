@@ -5,17 +5,20 @@ from pydantic import BaseModel, validator
 from sqlalchemy.ext.associationproxy import _AssociationList
 from typing import List, Union, Sequence
 
-class ArtistBase(BaseModel):
+
+class BaseModelOrm(BaseModel):
+    class Config:
+        orm_mode = True
+
+
+class ArtistBase(BaseModelOrm):
     id: int
     name: str
     latitude: Union[float, None]
     longitude: Union[float, None]
 
-    class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
 
-class TelegramMessageBase(BaseModel):
+class TelegramMessageBase(BaseModelOrm):
     id: int
     telegram_id: int
     date: Union[str, None]
@@ -27,31 +30,41 @@ class TelegramMessageBase(BaseModel):
     webpage_description: Union[str, None]
     is_music: Union[bool, None]
 
-    class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
 
 class ArtistSchema(ArtistBase):
     telegram_messages: List[TelegramMessageBase]
 
     # bugfix for association proxies https://github.com/pydantic/pydantic/issues/1038#issuecomment-863797154
-    @validator('telegram_messages', pre=True, whole=True)
+    @validator("telegram_messages", pre=True, whole=True)
     def check_roles(cls, v):
         if type(v) is _AssociationList or issubclass(cls, Sequence):
             return list(v)
-        raise ValueError('not a valid list')
+        raise ValueError("not a valid list")
 
 
 class TelegramMessageSchema(TelegramMessageBase):
     artists: List[Union[ArtistBase, None]]
 
     # bugfix for association proxies https://github.com/pydantic/pydantic/issues/1038#issuecomment-863797154
-    @validator('artists', pre=True, whole=True)
+    @validator("artists", pre=True, whole=True)
     def check_roles(cls, v):
         if type(v) is _AssociationList or issubclass(cls, Sequence):
             return list(v)
-        raise ValueError('not a valid list')
+        raise ValueError("not a valid list")
 
 
 class TelegramMessageArtistCreate(BaseModel):
     artist_name: str
+
+
+class TelegramMessageWithArtists(BaseModelOrm):
+    class _TelegramMessage(BaseModelOrm):
+        id: int
+        webpage_title: str
+        # webpage_description: str
+
+    # class _Artist(BaseModelOrm):
+    #     name: str
+
+    telegram_message: _TelegramMessage
+    artist_names: List[str]

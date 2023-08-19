@@ -8,20 +8,20 @@ from spacy.tokens import Span
 from spacy.util import filter_spans
 
 # get dataset from /spacy/dataset endpoint
-response = requests.get("http://localhost:8000/spacy/dataset")
+response = requests.get("http://localhost:8000/telegram_messages/artists")
 data = response.json()
 
 nlp = spacy.blank("en")
 
-examples = random.choices(data['dataset'], k=30)
+examples = random.choices(data["dataset"], k=30)
 
 all_docs = []
 
 for example in examples:
-    doc = nlp.make_doc(example['text'])
+    doc = nlp.make_doc(example["text"])
     ents = []
 
-    for start, end, label in example['entities']:
+    for start, end, label in example["entities"]:
         span = doc.char_span(start, end, label=label, alignment_mode="contract")
         if span is None:
             print("Skipping entity")

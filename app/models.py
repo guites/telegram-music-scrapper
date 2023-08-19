@@ -1,4 +1,12 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
 
@@ -28,7 +36,9 @@ class TelegramMessageArtist(Base):
     id = Column(Integer, primary_key=True, index=True)
     telegram_message_id = Column(Integer, ForeignKey("telegram_messages.id"))
     artist_id = Column(Integer, ForeignKey("artists.id"))
-    telegram_message = relationship("TelegramMessage", back_populates="artist_associations")
+    telegram_message = relationship(
+        "TelegramMessage", back_populates="artist_associations"
+    )
     artist = relationship("Artist", back_populates="telegram_message_associations")
     UniqueConstraint(telegram_message_id, artist_id)
 
@@ -74,4 +84,3 @@ class Artist(Base):
             telegram_message=telegram_message_obj
         ),
     )
-

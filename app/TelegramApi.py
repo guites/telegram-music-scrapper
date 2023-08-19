@@ -9,11 +9,14 @@ from app.crud import TelegramCrud, TelegramSessionCrud
 from app.database import DatabaseWrapper, engine
 from app.definitions import TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_CHANNEL_ID
 
+
 class TelegramApi:
     """A class to interact with the Telegram API.
-    
+
     Raises:
-        ValueError: If the TELEGRAM_API_ID, TELEGRAM_API_HASH or TELEGRAM_CHANNEL_ID environment variables are not defined."""
+        ValueError: If the TELEGRAM_API_ID, TELEGRAM_API_HASH or TELEGRAM_CHANNEL_ID environment variables are not defined.
+    """
+
     def __init__(self, session_name):
         self.api_id = TELEGRAM_API_ID
         self.api_hash = TELEGRAM_API_HASH
@@ -21,7 +24,9 @@ class TelegramApi:
         self.client = TelegramClient(session_name, self.api_id, self.api_hash)
 
         if self.api_id is None or self.api_hash is None:
-            raise ValueError("Please define the Telegram API ID, API Hash and Channel ID environment variables.")
+            raise ValueError(
+                "Please define the Telegram API ID, API Hash and Channel ID environment variables."
+            )
 
     async def get_channel_messages(self, channel, limit=10, total_count_limit=20):
         offset_id = self.starting_offset_id
@@ -63,7 +68,7 @@ class TelegramApi:
         print("Connected to Telegram Servers!")
         input_channel = PeerChannel(self.channel_id)
         channel = await self.client.get_entity(input_channel)
-        messages, offset_id = await self.get_channel_messages(channel)
+        messages, offset_id = await self.get_channel_messages(channel, 100, 100)
         self.starting_offset_id = offset_id
         print("Done getting messages. Last Offset ID:", offset_id)
         return messages, offset_id

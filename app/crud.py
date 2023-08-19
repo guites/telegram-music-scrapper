@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import inspect
+from sqlalchemy import inspect, func
 from sqlalchemy.orm import load_only, Session
 from typing import List, Union
 
@@ -92,23 +92,19 @@ class TelegramCrud:
 
         if site_name is not None:
             query = query.filter(TelegramMessage.site_name == site_name)
-        
+
         if is_music is not None:
             query = query.filter(TelegramMessage.is_music == is_music)
         else:
             query = query.filter(TelegramMessage.is_music == None)
-        
+
         if offset_id is not None:
             query = query.filter(TelegramMessage.id > offset_id)
 
         return query.all()
-    
+
     def read_telegram_messages_by_ids(self, ids: List[int]):
-        return (
-            self.db.query(TelegramMessage)
-            .filter(TelegramMessage.id.in_(ids))
-            .all()
-        )
+        return self.db.query(TelegramMessage).filter(TelegramMessage.id.in_(ids)).all()
 
     def read_telegram_message_site_names(self):
         site_names = self.db.query(TelegramMessage.site_name).distinct().all()
@@ -172,15 +168,15 @@ class TelegramCrud:
         telegram_message = self.read_telegram_message(message_id)
         if telegram_message is None:
             return None
-        # see if a registered artist exists for the given aritst name
+
+        stripped_artist_name = artist_name.strip()
+        # see if a registered artist exists for the given artist name
         registered_artist = (
-            self.db.query(Artist)
-            .filter(Artist.name == artist_name)
-            .first()
+            self.db.query(Artist).filter(Artist.name == stripped_artist_name).first()
         )
         if registered_artist is None:
             # create a new artist
-            registered_artist = Artist(name=artist_name)
+            registered_artist = Artist(name=stripped_artist_name)
             self.db.add(registered_artist)
             self.db.commit()
 
@@ -193,17 +189,12 @@ class TelegramCrud:
 
         return registered_artist
 
-
     def unregister_artist_from_telegram_message(self, message_id, artist_id):
         telegram_message = self.read_telegram_message(message_id)
         if telegram_message is None:
             return None
         # see if a registered artist exists for the given aritst name
-        registered_artist = (
-            self.db.query(Artist)
-            .filter(Artist.id == artist_id)
-            .first()
-        )
+        registered_artist = self.db.query(Artist).filter(Artist.id == artist_id).first()
         if registered_artist is None:
             return None
 
@@ -232,21 +223,29 @@ class TelegramCrud:
         self.db.commit()
         return telegram_message
 
-    
+    def read_telegram_messages_with_artists(self):
+        return (
+            self.db.query(
+                TelegramMessageArtist,
+                func.group_concat(Artist.name).label("artist_names"),
+            )
+            .join(TelegramMessage)
+            .join(Artist)
+            .group_by(TelegramMessage.id)
+            .all()
+        )
+
+
 class ArtistCrud:
     def __init__(self, db: Session):
         self.db = db
 
     def read_artist(self, artist_id):
-        return (
-            self.db.query(Artist)
-            .filter(Artist.id == artist_id)
-            .first()
-        )
-    
+        return self.db.query(Artist).filter(Artist.id == artist_id).first()
+
     def read_artists(self):
         return self.db.query(Artist).all()
-    
+
     def delete_artist(self, artist):
         self.db.delete(artist)
         self.db.commit()

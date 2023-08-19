@@ -10,16 +10,16 @@ from sqlalchemy.orm import Session
 from typing import List
 from unidecode import unidecode
 
-import app.models as models
+from .models import Base
 
-from app.crud import ArtistCrud, TelegramCrud
-from app.database import engine
-from app.definitions import SPACY_MODEL_PATH
-from app.dependencies import get_db
-from app.routers import artists, telegram_messages
-from app.MusicBrainz import MusicBrainz
+from .crud import ArtistCrud, TelegramCrud
+from .database import engine
+from .definitions import SPACY_MODEL_PATH
+from .dependencies import get_db
+from .routers import artists, telegram_messages
+from .MusicBrainz import MusicBrainz
 
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -47,14 +47,13 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = str(process_time)
     return response
 
+
 @app.get("/spacy/dataset")
 def generate_spacy_dataset(
     db: Session = Depends(get_db),
 ):
     telegram_crud = TelegramCrud(db)
-    telegram_messages = telegram_crud.read_telegram_messages(
-        is_music=True
-    )
+    telegram_messages = telegram_crud.read_telegram_messages(is_music=True)
     dataset = []
     for msg in telegram_messages:
         artists = msg.artists
@@ -79,9 +78,13 @@ def generate_spacy_dataset(
         spans = []
         for cleaned_artist in cleaned_artists:
             # find every index of artist name in text
-            artist_indices = [m.start() for m in re.finditer(cleaned_artist, cleaned_text)]
+            artist_indices = [
+                m.start() for m in re.finditer(cleaned_artist, cleaned_text)
+            ]
             # create a list of tuples with the start and end index of the artist name
-            artist_spans = [(i, i + len(cleaned_artist), "artist") for i in artist_indices]
+            artist_spans = [
+                (i, i + len(cleaned_artist), "artist") for i in artist_indices
+            ]
             spans = spans + artist_spans
 
         element = {
@@ -106,7 +109,9 @@ def spacy_inference(
 ):
     # load the spacy model
     if SPACY_MODEL_PATH is None or not os.path.exists(SPACY_MODEL_PATH):
-        raise HTTPException(status_code=500, detail="No available spaCy model was found.")
+        raise HTTPException(
+            status_code=500, detail="No available spaCy model was found."
+        )
     nlp_ner = spacy.load(SPACY_MODEL_PATH)
 
     # concatenate title and description, if description is not null
@@ -123,6 +128,7 @@ def spacy_inference(
 
     return [(ent.text, ent.label_) for ent in doc.ents]
 
+
 @app.post("/spacy/suggestions")
 def get_spacy_nlp_suggestions(
     telegram_message_ids: List[int],
@@ -130,11 +136,15 @@ def get_spacy_nlp_suggestions(
 ):
     # get the messages from the database
     telegram_crud = TelegramCrud(db)
-    telegram_messages = telegram_crud.read_telegram_messages_by_ids(telegram_message_ids)
-    
+    telegram_messages = telegram_crud.read_telegram_messages_by_ids(
+        telegram_message_ids
+    )
+
     # load the spacy model
     if SPACY_MODEL_PATH is None or not os.path.exists(SPACY_MODEL_PATH):
-        raise HTTPException(status_code=500, detail="No available spaCy model was found.")
+        raise HTTPException(
+            status_code=500, detail="No available spaCy model was found."
+        )
     nlp_ner = spacy.load(SPACY_MODEL_PATH)
 
     # for each message, concatenate the title and description and run the spacy model
@@ -142,7 +152,7 @@ def get_spacy_nlp_suggestions(
         # skip if message is not webpage or if website is not youtube
         if not msg.is_webpage or msg.site_name != "YouTube":
             continue
-        
+
         # get the title and description
         video_title = msg.webpage_title
         video_description = msg.webpage_description
@@ -161,31 +171,42 @@ def get_spacy_nlp_suggestions(
         doc = nlp_ner(cleaned_text)
 
         # save suggestions to the message object
-        suggestions = {
-            "webpage_title": [],
-            "webpage_description": []
-        }
+        suggestions = {"webpage_title": [], "webpage_description": []}
         for ent in doc.ents:
-
             title_text_start = video_title.find(ent.text)
             if title_text_start != -1:
-
                 # check if there isnt a suggestion for the same text with the same start and end index
                 # this is to avoid duplicates
-                if not any(suggestion[0] == title_text_start and suggestion[1] == title_text_start + len(ent.text) for suggestion in suggestions["webpage_title"]):
-                    suggestions["webpage_title"].append((title_text_start, title_text_start + len(ent.text), ent.text))
+                if not any(
+                    suggestion[0] == title_text_start
+                    and suggestion[1] == title_text_start + len(ent.text)
+                    for suggestion in suggestions["webpage_title"]
+                ):
+                    suggestions["webpage_title"].append(
+                        (title_text_start, title_text_start + len(ent.text), ent.text)
+                    )
 
             if video_description is not None:
                 descr_text_start = video_description.find(ent.text)
                 if descr_text_start != -1:
-                    if not any(suggestion[0] == descr_text_start and suggestion[1] == descr_text_start + len(ent.text) for suggestion in suggestions["webpage_description"]):
-                        suggestions["webpage_description"].append((descr_text_start, descr_text_start + len(ent.text), ent.text))
-                
+                    if not any(
+                        suggestion[0] == descr_text_start
+                        and suggestion[1] == descr_text_start + len(ent.text)
+                        for suggestion in suggestions["webpage_description"]
+                    ):
+                        suggestions["webpage_description"].append(
+                            (
+                                descr_text_start,
+                                descr_text_start + len(ent.text),
+                                ent.text,
+                            )
+                        )
+
         msg.suggestions = suggestions
     return telegram_messages
-    
 
-@app.get('/musicbrainz/artists/{artist_id}')
+
+@app.get("/musicbrainz/artists/{artist_id}")
 def search_musicbrainz_artists(
     artist_id: int,
     db: Session = Depends(get_db),
@@ -199,9 +220,5 @@ def search_musicbrainz_artists(
     return mbz_artist
 
 
-def main():
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
 if __name__ == "__main__":
-    main()
+    uvicorn.run(app, host="0.0.0.0", port=8000)
