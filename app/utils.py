@@ -3,6 +3,7 @@ import sys
 
 from definitions import ARTISTS_FILE_PATH
 
+
 def check_artist_names_file():
     if ARTISTS_FILE_PATH is None:
         print("Please define the ARTISTS_FILE_PATH environment variable.")

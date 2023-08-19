@@ -1,6 +1,6 @@
 import spacy
 
-nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load("en_core_web_sm")
 
 text = """
 Empty Vessels Make The Loudest Sound by The Mars Volta (from the album Noctourniquet).

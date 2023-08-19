@@ -19,7 +19,9 @@ print(f"Located artist dump file at {ARTIST_DUMP_FILE}")
 print("Creating artist.csv file...")
 
 # use jq to create .csv from artist file
-os.system(f"jq -r '. | [.name, .id, .sort_name, .\"begin-area\".name, .\"end-area\".name, .country, .area.name, .area.sort_name, .\"life-span\".ended, .\"life-span\".begin, .\"life-span\".end, .type] | @csv' {ARTIST_DUMP_FILE} > artist.csv")
+os.system(
+    f'jq -r \'. | [.name, .id, .sort_name, ."begin-area".name, ."end-area".name, .country, .area.name, .area.sort_name, ."life-span".ended, ."life-span".begin, ."life-span".end, .type] | @csv\' {ARTIST_DUMP_FILE} > artist.csv'
+)
 
 print("Cleaning artist.csv file...")
 

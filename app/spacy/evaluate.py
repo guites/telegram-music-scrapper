@@ -10,12 +10,12 @@ def main(args):
     load_start = time.time()
     nlp_ner = spacy.load(args.model)
     print("Model loaded in {:.2f} seconds".format(time.time() - load_start))
-    
+
     # evaluate the text
     eval_start = time.time()
     doc = nlp_ner(args.text)
     print("Text evaluated in {:.2f} seconds".format(time.time() - eval_start))
-    
+
     # run displacy.serve if display is True
     if args.display:
         colors = {"artist": "linear-gradient(90deg, #aa9cfc, #fc9ce7)"}
