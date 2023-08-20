@@ -77,6 +77,18 @@ const delete_artist = async artist_id => {
     return request;
 };
 
+const create_dataset_message = async telegram_message_id => {
+    const url = new URL(`${API_URL}/datasets/messages`);
+
+    const searchParams = new URLSearchParams();
+    searchParams.append('telegram_message_id', telegram_message_id);
+    url.search = searchParams.toString();
+    const request = fetch(url, {
+        method: 'post',
+    });
+    return request;
+};
+
 export {
     read_telegram_messages,
     sync_telegram_messages,
@@ -86,4 +98,5 @@ export {
     read_telegram_message,
     read_artists_positions_by_openstreet,
     delete_artist,
+    create_dataset_message,
 };

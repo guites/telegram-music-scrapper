@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     read_telegram_messages,
     sync_telegram_messages,
+    create_dataset_message,
 } from './requests';
 import {
     getRangeById,
@@ -152,6 +153,10 @@ export const Messages = () => {
         setGettingMoreMessages(false);
     };
 
+    const mark_message_completed = async telegram_message_id => {
+        await create_dataset_message(telegram_message_id);
+    };
+
     // fetch table data from backend
     useEffect(() => {
         request_telegram_messages();
@@ -159,39 +164,6 @@ export const Messages = () => {
 
     const handleOnTitleHighlighted = range => {
         onTextHighlighted(range, titleRanges, setTitleRanges);
-    };
-
-    const handleOnDescrHighlighted = range => {
-        onTextHighlighted(range, descrRanges, setDescrRanges);
-    };
-
-    const descrRenderer = (
-        currentRenderedNodes,
-        currentRenderedRange,
-        currentRenderedIndex,
-        onMouseOverHighlightedWord,
-    ) => {
-        const handleCancelSelection = range => {
-            resetHightlight(range, descrRanges, setDescrRanges);
-        };
-        const handleConfirmSelection = range => {
-            confirmSelection(range);
-        };
-        const handleRemoveSelection = range => {
-            removeSelection(range, 'descr');
-        };
-
-        return (
-            <TooltipRenderer
-                key={`${currentRenderedRange.data.id}-${currentRenderedIndex}`}
-                letterNodes={currentRenderedNodes}
-                range={currentRenderedRange}
-                onMouseOverHighlightedWord={onMouseOverHighlightedWord}
-                handleCancelSelection={handleCancelSelection}
-                handleConfirmSelection={handleConfirmSelection}
-                handleRemoveSelection={handleRemoveSelection}
-            />
-        );
     };
 
     const titleRenderer = (
@@ -314,14 +286,13 @@ export const Messages = () => {
                         <br />
                         <br />✅ Sinalize os vídeos como concluídos!
                         <br />
-                        <br />❌ Sinalize vídeos que não são de música.
                     </p>
                     <details>
                         <summary>Perguntas frequentes</summary>
                         <ol>
                             <li>
                                 <strong>
-                                    Vídeo é de música, mas não tem o nome
+                                    Vídeo não é de música ou não tem o nome
                                     do artista/banda no título?
                                 </strong>
                                 <br />
@@ -339,6 +310,34 @@ export const Messages = () => {
                                 naquele contexto, aquele conjunto de
                                 palavras significa um nome de artista ou
                                 banda.
+                            </li>
+                            <li>
+                                <strong>
+                                    Título do vídeo possui um artista
+                                    principal e várias participações?
+                                </strong>
+                                <br />
+                                Marque todos os artistas, separadamente!
+                                Por exemplo:
+                                <ul>
+                                    <li>
+                                        <mark>Dow Raiz</mark> Feat.{' '}
+                                        <mark>Lino Krizz</mark> - Melhor
+                                        Que Ontem
+                                    </li>
+                                    <li>
+                                        <mark>Rael</mark> - Passiflora
+                                        part. <mark>Céu</mark>,{' '}
+                                        <mark>RDD</mark> e{' '}
+                                        <mark>Ailton Krenak</mark>
+                                    </li>
+                                    <li>
+                                        <mark>INQUÉRITO</mark> | Versos
+                                        Vegetarianos - Part.{' '}
+                                        <mark>Arnaldo Antunes</mark> [Clipe
+                                        Oficial]
+                                    </li>
+                                </ul>
                             </li>
                         </ol>
                     </details>
@@ -397,14 +396,16 @@ export const Messages = () => {
                                                 <Button
                                                     variant="secondary"
                                                     size="sm"
+                                                    disabled={
+                                                        gettingMoreMessages
+                                                    }
+                                                    onClick={() =>
+                                                        mark_message_completed(
+                                                            row.id,
+                                                        )
+                                                    }
                                                 >
                                                     ✅
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                >
-                                                    ❌
                                                 </Button>
                                             </ButtonGroup>
                                         </td>

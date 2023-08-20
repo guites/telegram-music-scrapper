@@ -107,7 +107,7 @@ class DatasetTelegramMessage(Base):
     id = Column(Integer, primary_key=True)
     dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=True)
     telegram_message_id = Column(
-        Integer, ForeignKey("telegram_messages.id"), nullable=False
+        Integer, ForeignKey("telegram_messages.id"), nullable=False, unique=True
     )
     dataset = relationship("Dataset", back_populates="dataset_telegram_messages")
     telegram_message = relationship(

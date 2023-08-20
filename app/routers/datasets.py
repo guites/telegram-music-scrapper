@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from crud import DatasetCrud
@@ -20,4 +20,9 @@ def create_dataset(dataset: DatasetCreate, db: Session = Depends(get_db)):
 @router.post("/messages", status_code=201)
 def create_dataset_message(telegram_message_id: int, db: Session = Depends(get_db)):
     dataset_crud = DatasetCrud(db)
-    dataset_crud.create_dataset_message(telegram_message_id)
+    try:
+        dataset_crud.create_dataset_message(telegram_message_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400, detail="Artist already registered to telegram message."
+        )

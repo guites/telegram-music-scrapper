@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import List, Union
 
@@ -253,8 +254,22 @@ class DatasetCrud:
         self.db.commit()
 
     def create_dataset_message(self, telegram_message_id: int):
+        """Registers a Telegram Message as a Dataset Message by its id.
+        The created Dataset Message has no dataset_id, as it is only filled
+        later when exporting the dataset to the spaCy doc format.
+
+        Raises:
+            ValueError: received telegram_message_id already registered
+            as a dataset message.
+        """
         dataset_telegram_message = DatasetTelegramMessage(
             telegram_message_id=telegram_message_id
         )
-        self.db.add(dataset_telegram_message)
-        self.db.commit()
+        try:
+            self.db.add(dataset_telegram_message)
+            self.db.commit()
+        except IntegrityError as e:
+            print(str(e))
+            raise ValueError(
+                "Received telegram_message_id already registered as a dataset message"
+            )
