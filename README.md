@@ -44,6 +44,12 @@ o `CHANNEL_ID` será `12223346006`.
 
 O `SPACY_MODEL_PATH` é necessário para realizar inferências usando o modelo, mas não é obrigatório para rodar a aplicação. Ver seção **Configurando o módulo de IA**.
 
+#### Iniciando o banco de dados
+
+O projeto faz versionamento do banco de dados usando [alembic](https://alembic.sqlalchemy.org/en/latest/). Certifique-se de que você está com o banco atualizado rodando
+
+    alembic upgrade head
+
 #### Criando sessões para acesso ao Telegram
 
 Primeiro, rode o script `TelegramApi.py` diretamente, da raíz do repositório.
