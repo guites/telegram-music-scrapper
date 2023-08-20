@@ -12,11 +12,10 @@ from unidecode import unidecode
 
 from models import Base
 
-from crud import ArtistCrud, TelegramCrud
+from crud import ArtistCrud
 from database import engine
-from definitions import SPACY_MODEL_PATH
 from dependencies import get_db
-from routers import artists, telegram_messages
+from routers import artists, datasets, telegram_messages
 from MusicBrainz import MusicBrainz
 
 Base.metadata.create_all(bind=engine)
@@ -27,8 +26,9 @@ origins = [
     "http://localhost:3000",
 ]
 
-app.include_router(telegram_messages.router)
 app.include_router(artists.router)
+app.include_router(datasets.router)
+app.include_router(telegram_messages.router)
 
 app.add_middleware(
     CORSMiddleware,

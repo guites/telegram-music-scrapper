@@ -51,15 +51,13 @@ const read_telegram_message = async message_id => {
 const read_telegram_messages = async offset_id => {
     const url = new URL(`${API_URL}/telegram_messages/`);
 
-    const params = {
-        site_name: 'YouTube',
-    };
+    const searchParams = new URLSearchParams();
+    searchParams.append('site_name', 'YouTube');
+    searchParams.append('unlabeled', 'true');
     if (offset_id !== null) {
-        params.offset_id = offset_id;
+        searchParams.append('offset_id', offset_id);
     }
-
-    url.search = new URLSearchParams(params).toString();
-
+    url.search = searchParams.toString();
     const raw_messages = await fetch(url);
     const json_messages = await raw_messages.json();
     return json_messages;

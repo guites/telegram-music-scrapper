@@ -2,7 +2,7 @@ import os
 import re
 import spacy
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import List, Union
@@ -31,17 +31,16 @@ router = APIRouter(
 @router.get("/", response_model=List[TelegramMessageSchema])
 async def read_telegram_messages(
     site_name: Union[str, None] = None,
-    fields: List[str] = Query(None),
-    offset_id: Union[int, None] = None,
+    unlabeled: Union[bool, None] = None,
     db: Session = Depends(get_db),
 ):
     telegram_crud = TelegramCrud(db)
+
     try:
-        telegram_messages = telegram_crud.read_telegram_messages(
-            site_name, offset_id, fields
-        )
+        telegram_messages = telegram_crud.read_telegram_messages(site_name, unlabeled)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
     return telegram_messages
 
 

@@ -1,10 +1,12 @@
 from datetime import datetime
-from sqlalchemy import inspect, func
-from sqlalchemy.orm import load_only, Session
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 from typing import List, Union
 
 from models import (
     Artist,
+    Dataset,
+    DatasetTelegramMessage,
     TelegramMessage,
     TelegramMessageArtist,
     TelegramSession,
@@ -73,27 +75,21 @@ class TelegramCrud:
     def read_telegram_messages(
         self,
         site_name: Union[str, None] = None,
-        offset_id: Union[int, None] = None,
-        fields: Union[List[str], None] = None,
+        unlabeled: Union[bool, None] = None,
     ):
         query = self.db.query(TelegramMessage)
-        # allow user to select which fields to return
-        if fields is not None:
-            field_mapper = inspect(TelegramMessage)
-            allowed_fields = [column.key for column in field_mapper.attrs]
-            for field in fields:
-                if field not in allowed_fields:
-                    raise ValueError(f"Field {field} is not allowed.")
-            # load only columns received in fields param in the form of ORM mapped attributes
-            query = query.options(
-                load_only(*[getattr(TelegramMessage, f) for f in fields])
-            )
 
         if site_name is not None:
             query = query.filter(TelegramMessage.site_name == site_name)
 
-        if offset_id is not None:
-            query = query.filter(TelegramMessage.id > offset_id)
+        if unlabeled is not None:
+            # SELECT COUNT(*) FROM telegram_messages
+            # WHERE id NOT IN (
+            #   SELECT telegram_message_id FROM dataset_telegram_messages
+            # )
+            # AND site_name = "YouTube";
+            subquery = self.db.query(DatasetTelegramMessage.telegram_message_id)
+            query = query.filter(TelegramMessage.id.not_in(subquery))
 
         return query.all()
 
@@ -235,3 +231,30 @@ class ArtistCrud:
         self.db.delete(artist)
         self.db.commit()
         return artist
+
+
+class DatasetCrud:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def create_dataset(self, file_name: str, telegram_message_ids: List[int]):
+        dataset = Dataset(file_name=file_name)
+        self.db.add(dataset)
+        self.db.commit()
+
+        dataset_telegram_messages = [
+            DatasetTelegramMessage(
+                dataset_id=dataset.id, telegram_message_id=telegram_message_id
+            )
+            for telegram_message_id in telegram_message_ids
+        ]
+
+        self.db.bulk_save_objects(dataset_telegram_messages)
+        self.db.commit()
+
+    def create_dataset_message(self, telegram_message_id: int):
+        dataset_telegram_message = DatasetTelegramMessage(
+            telegram_message_id=telegram_message_id
+        )
+        self.db.add(dataset_telegram_message)
+        self.db.commit()

@@ -70,6 +70,7 @@ export const Messages = () => {
         telegram_messages.forEach((row, _) => {
             initial_text.push({
                 id: row.id,
+                telegram_id: row.telegram_id,
                 message: row.message,
                 site_name: row.site_name,
                 webpage_url: row.webpage_url,
@@ -135,6 +136,7 @@ export const Messages = () => {
             if (row.id > biggest_id_item.id) {
                 new_text.push({
                     id: row.id,
+                    telegram_id: row.telegram_id,
                     message: row.message,
                     site_name: row.site_name,
                     webpage_url: row.webpage_url,
@@ -348,6 +350,7 @@ export const Messages = () => {
                         <thead>
                             <tr>
                                 <th>#</th>
+                                <th>Telegram Id</th>
                                 <th>URL do vídeo</th>
                                 <th>Título</th>
                                 <th>Ações</th>
@@ -361,7 +364,8 @@ export const Messages = () => {
                                         key={row.id}
                                     >
                                         <td>{row.id}</td>
-                                        <td>{row.message}</td>
+                                        <td>{row.telegram_id}</td>
+                                        <td>{row.webpage_url}</td>
                                         <td className="webpage_title">
                                             <Highlightable
                                                 ranges={getRangeById(

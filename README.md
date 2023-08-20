@@ -2,6 +2,42 @@
 
 O objetivo desse projeto é pegar músicas jogadas em um canal do telegram através de URLs do youtube.
 
+Estrutura do banco de dados
+
+![ER diagram of project database](./db_structure.png "ER diagram of project database")
+
+<details closed>
+    <summary>Código do diagrama (mermaid.js)</summary>
+    <pre><code>
+    erDiagram
+        TelegramMessage ||--o{ TelegramMessageArtist : "Mentions"
+        Artist }|--|{ TelegramMessageArtist : "Mentioned In"
+        Dataset ||--|{ DatasetTelegramMessage : "Composed Of"
+        TelegramMessage ||--|{ DatasetTelegramMessage : "Included In"
+    </code></pre>
+</details>
+
+Fluxo da criação de datasets
+
+![Fluxo da criação de datasets](./dataset_creation.png "Fluxo da criação de datasets")
+
+<details closed>
+    <summary>Código do diagrama (mermaid.js)</summary>
+    <pre><code>
+    flowchart TD
+        A[No dataset] --> B[Label messages]
+        B --> C[Create Dataset]
+        C -->|Include only new annotated messages| D[Add labeled messages to dataset]
+        D --> E[Export dataset to spaCy format]
+        E --> F[Label more messages]
+        F --> C
+        E --> G[Train model]
+        G --> H[Use model to suggest annotations]
+        H -->|Accept suggestions| F
+    </code></pre>
+</details>
+
+
 ## Instalação
 
 O projeto é composto de uma API Web escrita em Python, um frontend em React e um módulo de IA para treinamento do modelo de linguagem natural.
@@ -42,7 +78,7 @@ O `TELEGRAM_CHANNEL_ID` pode ser retirado da URL do seu grupo no telegram. Por e
 
 o `CHANNEL_ID` será `12223346006`.
 
-O `SPACY_MODEL_PATH` é necessário para realizar inferências usando o modelo, mas não é obrigatório para rodar a aplicação. Ver seção **Configurando o módulo de IA**.
+O `SPACY_MODEL_PATH` é necessário para realizar inferências usando o modelo, mas não é obrigatório para rodar a aplicação. Ver seção **Iniciando o módulo de IA**.
 
 #### Iniciando o banco de dados
 
@@ -94,7 +130,7 @@ Dentro do diretório `frontend`, rode o comando:
 
 A aplicação ficará disponível em <http://localhost:3000>.
 
-#### Configurando o módulo de IA
+### Iniciando o módulo de IA
 
 Com os dados extraídos do telegram e anotados através do frontend, podemos utilizar o módulo de IA para treinar um modelo de processamento de linguagem natural (NLP) utilizando a biblioteca [spaCy](https://spacy.io/).
 

@@ -9,6 +9,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.functions import current_timestamp
 
 from database import Base
 
@@ -65,6 +66,10 @@ class TelegramMessage(Base):
         creator=lambda artist_obj: TelegramMessageArtist(artist=artist_obj),
     )
 
+    dataset_telegram_message = relationship(
+        "DatasetTelegramMessage", back_populates="telegram_message"
+    )
+
 
 class Artist(Base):
     __tablename__ = "artists"
@@ -82,4 +87,29 @@ class Artist(Base):
         creator=lambda telegram_message_obj: TelegramMessageArtist(
             telegram_message=telegram_message_obj
         ),
+    )
+
+
+class Dataset(Base):
+    __tablename__ = "datasets"
+
+    id = Column(Integer, primary_key=True)
+    file_name = Column(String, nullable=False)
+    creation_date = Column(DateTime, server_default=current_timestamp(), nullable=False)
+    dataset_telegram_messages = relationship(
+        "DatasetTelegramMessage", back_populates="dataset"
+    )
+
+
+class DatasetTelegramMessage(Base):
+    __tablename__ = "dataset_telegram_messages"
+
+    id = Column(Integer, primary_key=True)
+    dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=True)
+    telegram_message_id = Column(
+        Integer, ForeignKey("telegram_messages.id"), nullable=False
+    )
+    dataset = relationship("Dataset", back_populates="dataset_telegram_messages")
+    telegram_message = relationship(
+        "TelegramMessage", back_populates="dataset_telegram_message"
     )

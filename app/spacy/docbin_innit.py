@@ -16,7 +16,11 @@ data = response.json()
 
 training_data = {"classes": ["artist"], "annotations": data["dataset"]}
 
+
+telegram_message_ids = []
 for training_example in tqdm(training_data["annotations"]):
+    telegram_message_ids.append(training_example["telegram_message_id"])
+
     text = training_example["text"]
     labels = training_example["entities"]
     doc = nlp.make_doc(text)
@@ -40,5 +44,13 @@ if os.path.exists(training_data_file):
         file_postfix = file_postfix + 1
 
 doc_bin.to_disk(training_data_file)  # save the docbin object
+
+requests.post(
+    "http://localhost:8000/datasets",
+    json={
+        "file_name": training_data_file,
+        "telegram_message_ids": telegram_message_ids,
+    },
+)
 
 # TODO: test trained model on new data: https://newscatcherapi.com/blog/train-custom-named-entity-recognition-ner-model-with-spacy-v3
