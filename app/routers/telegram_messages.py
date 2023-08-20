@@ -31,7 +31,6 @@ router = APIRouter(
 @router.get("/", response_model=List[TelegramMessageSchema])
 async def read_telegram_messages(
     site_name: Union[str, None] = None,
-    is_music: Union[bool, None] = None,
     fields: List[str] = Query(None),
     offset_id: Union[int, None] = None,
     db: Session = Depends(get_db),
@@ -39,7 +38,7 @@ async def read_telegram_messages(
     telegram_crud = TelegramCrud(db)
     try:
         telegram_messages = telegram_crud.read_telegram_messages(
-            site_name, is_music, offset_id, fields
+            site_name, offset_id, fields
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -133,21 +132,6 @@ async def read_telegram_message(
 ) -> TelegramMessageBase:
     telegram_crud = TelegramCrud(db)
     telegram_message = telegram_crud.read_telegram_message(telegram_message_id)
-    if telegram_message is None:
-        raise HTTPException(status_code=404, detail="Telegram message not found")
-    return telegram_message
-
-
-@router.patch("/{telegram_message_id}")
-async def update_telegram_message_is_music(
-    telegram_message_id: int,
-    is_music: bool,
-    db: Session = Depends(get_db),
-):
-    telegram_crud = TelegramCrud(db)
-    telegram_message = telegram_crud.update_telegram_message_is_music(
-        telegram_message_id, is_music
-    )
     if telegram_message is None:
         raise HTTPException(status_code=404, detail="Telegram message not found")
     return telegram_message

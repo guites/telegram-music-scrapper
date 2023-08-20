@@ -73,7 +73,6 @@ class TelegramCrud:
     def read_telegram_messages(
         self,
         site_name: Union[str, None] = None,
-        is_music: Union[bool, None] = None,
         offset_id: Union[int, None] = None,
         fields: Union[List[str], None] = None,
     ):
@@ -92,11 +91,6 @@ class TelegramCrud:
 
         if site_name is not None:
             query = query.filter(TelegramMessage.site_name == site_name)
-
-        if is_music is not None:
-            query = query.filter(TelegramMessage.is_music == is_music)
-        else:
-            query = query.filter(TelegramMessage.is_music == None)
 
         if offset_id is not None:
             query = query.filter(TelegramMessage.id > offset_id)
@@ -213,15 +207,6 @@ class TelegramCrud:
         self.db.commit()
 
         return registered_artist
-
-    def update_telegram_message_is_music(self, message_id, is_music):
-        telegram_message = self.read_telegram_message(message_id)
-        if telegram_message is None:
-            return None
-        telegram_message.is_music = is_music
-        self.db.add(telegram_message)
-        self.db.commit()
-        return telegram_message
 
     def read_telegram_messages_with_artists(self):
         return (

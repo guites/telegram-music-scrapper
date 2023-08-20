@@ -28,7 +28,6 @@ class TelegramMessageBase(BaseModelOrm):
     webpage_url: Union[str, None]
     webpage_title: Union[str, None]
     webpage_description: Union[str, None]
-    is_music: Union[bool, None]
 
 
 class ArtistSchema(ArtistBase):

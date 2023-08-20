@@ -54,7 +54,6 @@ class TelegramMessage(Base):
     webpage_url = Column(String)
     webpage_title = Column(String)
     webpage_description = Column(String)
-    is_music = Column(Boolean)
 
     artist_associations = relationship(
         "TelegramMessageArtist", back_populates="telegram_message"
