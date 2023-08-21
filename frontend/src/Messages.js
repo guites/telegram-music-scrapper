@@ -144,6 +144,7 @@ export const Messages = () => {
 
     const mark_message_completed = async telegram_message_id => {
         await create_dataset_message(telegram_message_id);
+        setText(text.filter(item => item.id !== telegram_message_id));
     };
 
     // fetch table data from backend
