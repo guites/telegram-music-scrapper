@@ -67,7 +67,6 @@ export const Messages = () => {
         const telegram_messages = await read_telegram_messages(null);
         const initial_text = [];
         const batchTitleRanges = [];
-        const batchDescrRanges = [];
         telegram_messages.forEach((row, _) => {
             initial_text.push({
                 id: row.id,
@@ -96,20 +95,10 @@ export const Messages = () => {
                     if (titleRange) {
                         batchTitleRanges.push(titleRange);
                     }
-                    const descrRange = addToRanges(
-                        row.webpage_description,
-                        artist,
-                        'descr',
-                        row.id,
-                    );
-                    if (descrRange) {
-                        batchDescrRanges.push(descrRange);
-                    }
                 }
             }
         });
         batchAddHighlight(batchTitleRanges, titleRanges, setTitleRanges);
-        batchAddHighlight(batchDescrRanges, descrRanges, setDescrRanges);
         setText(initial_text);
     });
 
@@ -213,9 +202,6 @@ export const Messages = () => {
         if (type === 'title') {
             resetHightlight(range, titleRanges, setTitleRanges);
         }
-        if (type === 'descr') {
-            resetHightlight(range, descrRanges, setDescrRanges);
-        }
     };
 
     const confirmSelection = async range => {
@@ -224,9 +210,7 @@ export const Messages = () => {
             range.start,
             range.end + 1,
         );
-        const telegram_message_id = range.data.id
-            .replace('title-', '')
-            .replace('descr-', '');
+        const telegram_message_id = range.data.id.replace('title-', '');
         console.log(
             `Matching artist ${selectedText} to message ${selectedText}`,
         );
@@ -259,7 +243,6 @@ export const Messages = () => {
     };
 
     const [titleRanges, setTitleRanges] = useState([]);
-    const [descrRanges, setDescrRanges] = useState([]);
 
     return (
         <>
