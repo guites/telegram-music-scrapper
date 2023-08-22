@@ -39,7 +39,7 @@ export const Messages = () => {
     ]);
     const [gettingMoreMessages, setGettingMoreMessages] = useState(false);
 
-    const addToRanges = (text, artist, type, row_id) => {
+    const addToRanges = (text, artist, type, row_id, suggestion) => {
         if (!text) {
             return;
         }
@@ -57,7 +57,7 @@ export const Messages = () => {
             data: {
                 id: `${type}-${row_id}`,
                 artist_id: artist.id,
-                origin: 'automatic',
+                origin: suggestion ? 'suggested' : 'automatic',
             },
         };
         return range;
@@ -91,9 +91,28 @@ export const Messages = () => {
                         artist,
                         'title',
                         row.id,
+                        null,
                     );
                     if (titleRange) {
                         batchTitleRanges.push(titleRange);
+                    }
+                }
+            }
+            if (row.suggestions && row.suggestions.webpage_title) {
+                const suggestions = row.suggestions.webpage_title;
+                for (const suggestion of suggestions) {
+                    const suggestedArtist = suggestion[2];
+                    if (!suggestedArtist) continue;
+
+                    const suggestionRange = addToRanges(
+                        row.webpage_title,
+                        { name: suggestedArtist },
+                        'title',
+                        row.id,
+                        true,
+                    );
+                    if (suggestionRange) {
+                        batchTitleRanges.push(suggestionRange);
                     }
                 }
             }

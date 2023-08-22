@@ -49,14 +49,13 @@ And access <http://localhost:5000> to visualize a sample of 30 annotated texts f
 
 You can now train the model using
 
-
-    TRAINING_DATA={training_data_{%d_%m_%Y}.spacy} python3 -m spacy train config.cfg --output ./ --paths.train "./$TRAINING_DATA" --paths.dev "./$TRAINING_DATA"
+    TRAINING_DATA=$(ls -lt training_data* | rev | head -n1 | cut -d' ' -f 1 | rev) \
+    OUTPUT_DIR="${TRAINING_DATA%.*}" \
+    python3 -m spacy train config.cfg --output "./model_$OUTPUT_DIR" --paths.train "./$TRAINING_DATA" --paths.dev "./$TRAINING_DATA"
 
 append `--gpu-id 0` with your gpu id if you have one available.
 
-Substitute {training\_data\_{%d\_%m\_%Y}.spacy} for your latest generated dataset file.
-
-This should result in a `model-best` and a `model-last` directory.
+This should result in a `model-best` and a `model-last` directory inside $OUTPUT_DIR.
 
 ## Evaluate the model
 

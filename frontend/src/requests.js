@@ -54,6 +54,7 @@ const read_telegram_messages = async offset_id => {
     const searchParams = new URLSearchParams();
     searchParams.append('site_name', 'YouTube');
     searchParams.append('unlabeled', 'true');
+    searchParams.append('suggestions', 'true');
     if (offset_id !== null) {
         searchParams.append('offset_id', offset_id);
     }

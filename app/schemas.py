@@ -59,6 +59,10 @@ class TelegramMessageSchema(BaseModelOrm):
         raise ValueError("not a valid list")
 
 
+class TelegramMessageWithSuggestions(TelegramMessageSchema):
+    suggestions: Union[dict, None]
+
+
 class TelegramMessageArtistCreate(BaseModel):
     artist_name: str
 

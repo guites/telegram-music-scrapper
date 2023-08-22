@@ -7,14 +7,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import List, Union
 
+from crud import TelegramCrud, TelegramSessionCrud
 from definitions import SPACY_MODEL_PATH
 from dependencies import get_db
-from crud import TelegramCrud, TelegramSessionCrud
+from nlp import get_suggestions_from_telegram_messages
 from schemas import (
     ArtistBase,
     TelegramMessageArtistCreate,
     TelegramMessageBase,
     TelegramMessageSchema,
+    TelegramMessageWithSuggestions,
 )
 from TelegramApi import TelegramApi
 
@@ -28,10 +30,11 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[TelegramMessageSchema])
+@router.get("/", response_model=List[TelegramMessageWithSuggestions])
 async def read_telegram_messages(
     site_name: Union[str, None] = None,
     unlabeled: Union[bool, None] = None,
+    suggestions: Union[bool, None] = None,
     db: Session = Depends(get_db),
 ):
     telegram_crud = TelegramCrud(db)
@@ -40,6 +43,17 @@ async def read_telegram_messages(
         telegram_messages = telegram_crud.read_telegram_messages(site_name, unlabeled)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    if (
+        suggestions is True
+        and SPACY_MODEL_PATH is not None
+        and os.path.exists(SPACY_MODEL_PATH)
+    ):
+        nlp_ner = spacy.load(SPACY_MODEL_PATH)
+        telegram_messages_with_suggestions = get_suggestions_from_telegram_messages(
+            nlp_ner, telegram_messages
+        )
+        return telegram_messages_with_suggestions
 
     return telegram_messages
 
@@ -75,7 +89,7 @@ def get_all_messages_with_artists(db: Session = Depends(get_db)):
     return {"count": len(response_data), "dataset": response_data}
 
 
-@router.post("/suggestions")
+@router.post("/suggestions", response_model=List[TelegramMessageWithSuggestions])
 async def get_spacy_nlp_suggestions(
     telegram_message_ids: List[int],
     db: Session = Depends(get_db),
@@ -92,37 +106,10 @@ async def get_spacy_nlp_suggestions(
             status_code=500, detail="No available spaCy model was found."
         )
     nlp_ner = spacy.load(SPACY_MODEL_PATH)
-
-    # for each message, get the youtube video title and run through the spacy model
-    for msg in telegram_messages:
-        # skip if message is not webpage or if website is not youtube
-        if not msg.is_webpage or msg.site_name != "YouTube":
-            continue
-
-        # save the title as the inference text
-        text = msg.webpage_title
-
-        # run the spacy model
-        doc = nlp_ner(text)
-
-        # save suggestions to the message object
-        suggestions = {"webpage_title": []}
-        for ent in doc.ents:
-            title_text_start = text.find(ent.text)
-            if title_text_start != -1:
-                # check if there isnt a suggestion for the same text with the same start and end index
-                # this is to avoid duplicates
-                if not any(
-                    suggestion[0] == title_text_start
-                    and suggestion[1] == title_text_start + len(ent.text)
-                    for suggestion in suggestions["webpage_title"]
-                ):
-                    suggestions["webpage_title"].append(
-                        (title_text_start, title_text_start + len(ent.text), ent.text)
-                    )
-
-        msg.suggestions = suggestions
-    return telegram_messages
+    telegram_messages_with_suggestions = get_suggestions_from_telegram_messages(
+        nlp_ner, telegram_messages
+    )
+    return telegram_messages_with_suggestions
 
 
 @router.get("/{telegram_message_id}")
